@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>For Waania</title>
+    <style>
+        /* --- CORE STYLES --- */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            touch-action: none; 
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* --- UI LAYER --- */
+        #ui-layer {
+            position: absolute;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- MENU --- */
+        #menu {
+            pointer-events: auto; 
+            background: rgba(10, 10, 10, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            border: 2px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            max-height: 80vh; 
+            overflow-y: auto; 
+        }
+
+        h2 { margin: 0 0 10px 0; color: #ffb7b2; letter-spacing: 2px; font-weight: 300; }
+
+        .btn {
+            background: #222;
+            border: 1px solid #555;
+            color: white;
+            padding: 15px 0;
+            width: 200px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent; 
+            transition: background 0.2s, transform 0.1s;
+        }
+        
+        .btn:active { background: #fff; color: #000; transform: scale(0.98); }
+
+        /* --- RESET BUTTON (New) --- */
+        #reset-btn {
+            display: none; /* Hidden initially */
+            pointer-events: auto; 
+            margin-top: 20px;
+            background: rgba(255, 105, 180, 0.2);
+            border: 1px solid rgba(255, 105, 180, 0.5);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            animation: fadeIn 2s ease;
+        }
+
+        /* --- INSTRUCTIONS & MESSAGES --- */
+        #instruction {
+            position: absolute;
+            bottom: 60px;
+            width: 100%;
+            text-align: center;
+            color: #888;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            display: none; 
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; 
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            pointer-events: none;
+        }
+
+        h1.final-text { 
+            margin: 0; font-size: 2.5rem; color: #fff; 
+            text-transform: uppercase; letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255,105,180, 0.8);
+            line-height: 1.1;
+        }
+
+        /* --- CORNER TEXT --- */
+        .corner-text {
+            position: absolute;
+            top: 20px;
+            color: rgba(255, 255, 255, 0.5); 
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 20; 
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        #dedication { left: 20px; }
+        #signature { right: 20px; }
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="dedication" class="corner-text">For my Purrincess</div>
+    <div id="signature" class="corner-text">Made with ❤️ by Osama</div>
+
+    <div id="ui-layer">
+        <div id="menu">
+            <h2>PICK A SEED</h2>
+            <button class="btn" onclick="setupGame('flower')">Flower 🌻</button>
+            <button class="btn" onclick="setupGame('star')">Star 🌟</button>
+            <button class="btn" onclick="setupGame('heart')">Heart ❤️</button>
+            <button class="btn" onclick="setupGame('butterfly')">Butterfly 🦋</button>
+            <button class="btn" onclick="setupGame('galaxy')">Galaxy 🌌</button>
+            <button class="btn" onclick="setupGame('snowflake')">Snowflake ❄️</button>
+        </div>
+
+        <div id="instruction">Touch and hold...</div>
+        
+        <div id="message">
+            <h1 class="final-text">BEAUTIFUL WAANIA</h1>
+            <button id="reset-btn" onclick="returnToMenu()">Plant Another 🌱</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const menu = document.getElementById('menu');
+        const instruction = document.getElementById('instruction');
+        const msgBox = document.getElementById('message');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let width, height;
+        let animationFrame;
+        let activeShape = null; 
+        let number = 0;
+        let scale = 10;
+        let isGrowing = false;
+        let isFinished = false;
+
+        const palettes = [
+            { hueStart: 0, hueSpeed: 0.5 },    
+            { hueStart: 200, hueSpeed: 0.2 },  
+            { hueStart: 280, hueSpeed: 0.4 },  
+            { hueStart: 320, hueSpeed: 0.3 },  
+            { hueStart: 50, hueSpeed: 0.6 }    
+        ];
+        let currentPalette = palettes[0];
+
+        // --- RESIZE ---
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            if (!isGrowing && !isFinished && activeShape) resetCanvas();
+            if (!activeShape) { ctx.fillStyle = '#000'; ctx.fillRect(0,0,width,height); }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- GAME LOGIC ---
+        function setupGame(shape) {
+            activeShape = shape;
+            menu.style.display = 'none'; 
+            instruction.style.display = 'block'; 
+            
+            currentPalette = palettes[Math.floor(Math.random() * palettes.length)];
+            scale = (shape === 'heart') ? 8 : (shape === 'butterfly') ? 10 : 12;
+
+            resetCanvas();
+        }
+
+        function resetCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(width/2, height/2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            number = 0;
+            isFinished = false;
+            msgBox.style.opacity = 0;
+            resetBtn.style.display = 'none'; // Hide button on start
+        }
+
+        function returnToMenu() {
+            activeShape = null;
+            menu.style.display = 'flex'; 
+            instruction.style.display = 'none';
+            msgBox.style.opacity = 0;
+            resetBtn.style.display = 'none'; // Ensure hidden
+            isGrowing = false;
+            cancelAnimationFrame(animationFrame);
+            ctx.fillStyle = '#000'; 
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        // --- DRAWING ---
+        function draw() {
+            if (!isGrowing || isFinished) return;
+
+            let speed = (activeShape === 'heart' || activeShape === 'butterfly') ? 2 : 4;
+
+            for (let i = 0; i < speed; i++) {
+                let x = 0, y = 0, hue = 0; 
+
+                if (activeShape === 'flower') {
+                    const angle = number * 137.5;
+                    const r = scale * Math.sqrt(number);
+                    x = r * Math.cos(angle * Math.PI / 180) + width/2;
+                    y = r * Math.sin(angle * Math.PI / 180) + height/2;
+                    hue = (currentPalette.hueStart + number * currentPalette.hueSpeed) % 360;
+                } 
+                else if (activeShape === 'star') {
+                    const angle = number * 137.5;
+                    const r = (scale * Math.sqrt(number)) * (1 + 0.5 * Math.sin(5 * (angle * Math.PI/180))); 
+                    x = r * Math.cos(angle * Math.PI / 180) + width/2;
+                    y = r * Math.sin(angle * Math.PI / 180) + height/2;
+                    hue = (currentPalette.hueStart + number * 0.8) % 360;
+                } 
+                else if (activeShape === 'heart') {
+                    const t = number * 0.1; 
+                    const growSize = scale * Math.sqrt(number) * 0.05; 
+                    const hx = 16 * Math.pow(Math.sin(t), 3);
+                    const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                    x = hx * growSize + width/2;
+                    y = hy * growSize + height/2;
+                    hue = (320 + number * 0.2) % 360; 
+                }
+                else if (activeShape === 'butterfly') {
+                    const t = number * 0.05; 
+                    const growSize = scale * Math.sqrt(number) * 0.02; 
+                    const expr = Math.exp(Math.cos(t)) - 2 * Math.cos(4 * t) - Math.pow(Math.sin(t / 12), 5);
+                    x = (Math.sin(t) * expr) * growSize * 15 + width / 2;
+                    y = (-Math.cos(t) * expr) * growSize * 15 + height / 2;
+                    hue = (340 + number * 0.5) % 360; 
+                }
+                else if (activeShape === 'galaxy') {
+                    const armOffset = (number % 2 === 0) ? 0 : Math.PI;
+                    const angle = number * 0.1 + armOffset; 
+                    const r = scale * number * 0.05; 
+                    x = r * Math.cos(angle) + width / 2;
+                    y = r * Math.sin(angle) + height / 2;
+                    hue = (200 + number * 0.1) % 360; 
+                }
+                else if (activeShape === 'snowflake') {
+                    const segment = number % 6;
+                    const ring = Math.floor(number / 6);
+                    const angle = (segment * 60 * Math.PI / 180);
+                    const r = (scale * ring) + (scale * (number % 3)); 
+                    x = r * Math.cos(angle) + width / 2;
+                    y = r * Math.sin(angle) + height / 2;
+                    hue = (180 + number * 0.5) % 360; 
+                }
+
+                if (x < 10 || x > width - 10 || y < 10 || y > height - 10) {
+                    finish();
+                    return;
+                }
+
+                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                number++;
+            }
+            animationFrame = requestAnimationFrame(draw);
+        }
+
+        function finish() {
+            isGrowing = false;
+            isFinished = true;
+            instruction.style.display = 'none';
+            msgBox.style.opacity = 1;
+            // SHOW THE BUTTON NOW
+            resetBtn.style.display = 'inline-block';
+            // Enable button pointer events (just in case)
+            resetBtn.style.pointerEvents = 'auto';
+            
+            cancelAnimationFrame(animationFrame);
+        }
+
+        // --- INTERACTION ---
+        function handleInput(e) {
+            // FIX: If finished, ignore all touches on the canvas/screen
+            // The user MUST click the "Plant Another" button to reset.
+            if (isFinished) return;
+
+            // Ignore input if clicking a button
+            if (e.target.tagName === 'BUTTON') return;
+            
+            if (menu.style.display !== 'none') return;
+
+            if (e.type === 'mousedown' || e.type === 'touchstart') {
+                if (e.type === 'touchstart') e.preventDefault(); 
+                isGrowing = true;
+                instruction.style.opacity = 0;
+                draw();
+            }
+
+            if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseleave') {
+                isGrowing = false;
+                cancelAnimationFrame(animationFrame);
+                if (menu.style.display === 'none' && !isFinished) {
+                    instruction.style.opacity = 1;
+                    instruction.innerText = "Touch and hold...";
+                }
+            }
+        }
+
+        window.addEventListener('mousedown', handleInput);
+        window.addEventListener('touchstart', handleInput, {passive: false});
+        window.addEventListener('mouseup', handleInput);
+        window.addEventListener('touchend', handleInput);
+        window.addEventListener('mouseleave', handleInput);
+
+    </script>
+</body>
+</html>
