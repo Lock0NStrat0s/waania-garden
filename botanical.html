@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Waania's Botanical Lab</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "three";
+
+      // --- PART 1: SETUP ---
+      // Create the Scene
+      const scene = new THREE.Scene();
+
+      // Create the Camera
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+
+      // Create the Renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      // Set renderer size to window width/height
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      // Append renderer.domElement to document.body
+      document.body.appendChild(renderer.domElement);
+
+      // --- PART 2: THE OBJECT ---
+      // In Three.js, a Mesh = Geometry (Shape) + Material (Color/Skin)
+
+      // Create Geometry (try THREE.BoxGeometry or THREE.SphereGeometry)
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      // Create Material (try THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }))
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+      });
+      // Create the Mesh (combine geometry and material)
+      const cube = new THREE.Mesh(geometry, material);
+      // Add the mesh to the scene (scene.add(cube))
+      scene.add(cube);
+      camera.position.z = 5;
+
+      // --- PART 3: ANIMATION LOOP ---
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate the cube slightly every frame
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+
+        // Render the scene
+        renderer.render(scene, camera);
+      }
+
+      // Start the loop
+      animate();
+
+      // (I handled resizing for you)
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>
