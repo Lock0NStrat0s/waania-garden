@@ -182,24 +182,40 @@
         color: #00ff80;
       }
 
-      #saveBtn {
+      /* --- ACTION BAR (Bottom Right) --- */
+      .action-bar {
         position: absolute;
         bottom: 25px;
         right: 25px;
-        background: white;
-        color: #1a1a2e;
+        display: flex;
+        gap: 15px;
+        z-index: 100;
+      }
+      .fab-btn {
         border: none;
-        padding: 16px 28px;
+        padding: 0 24px;
+        height: 48px;
         border-radius: 50px;
         font-weight: 800;
-        font-size: 1rem;
+        font-size: 0.95rem;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        z-index: 100;
-        transition: transform 0.2s;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      #saveBtn:active {
+      .fab-btn:active {
         transform: scale(0.95);
+      }
+      #recordBtn {
+        background: #ff0066;
+        color: white;
+        box-shadow: 0 6px 25px rgba(255, 0, 102, 0.4);
+      }
+      #saveBtn {
+        background: white;
+        color: #1a1a2e;
       }
     </style>
 
@@ -301,7 +317,11 @@
         <button id="breatheBtn" class="action-btn">Start Breathing</button>
       </div>
     </div>
-    <button id="saveBtn">📸 Snap</button>
+
+    <div class="action-bar">
+      <button id="recordBtn" class="fab-btn">🎥 Loop</button>
+      <button id="saveBtn" class="fab-btn">📸 Snap</button>
+    </div>
 
     <script type="module">
       import * as THREE from "three";
@@ -319,22 +339,27 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
 
+        // Setup Destination for RECORDING
+        const dest = audioCtx.createMediaStreamDestination();
+        window.audioStream = dest.stream; // Save globally
+
         // Master Volume
         gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0; // Start silent
-        gainNode.connect(audioCtx.destination);
+        gainNode.gain.value = 0;
 
-        // Oscillator 1 (Base Drone)
+        // Connect to Speakers AND Recorder
+        gainNode.connect(audioCtx.destination);
+        gainNode.connect(dest);
+
+        // Oscillators
         osc1 = audioCtx.createOscillator();
         osc1.type = "sine";
-        osc1.frequency.value = 110; // A2 (Low hum)
+        osc1.frequency.value = 110;
         osc1.connect(gainNode);
         osc1.start();
-
-        // Oscillator 2 (Binaural Detune)
         osc2 = audioCtx.createOscillator();
         osc2.type = "sine";
-        osc2.frequency.value = 112; // 2Hz beat difference
+        osc2.frequency.value = 112;
         osc2.connect(gainNode);
         osc2.start();
 
@@ -343,17 +368,14 @@
 
       function toggleAudio(isPlaying) {
         if (!isAudioInit) initAudio();
-        // Resume context if browser suspended it
         if (audioCtx.state === "suspended") audioCtx.resume();
-
-        // Smooth fade in/out
         const now = audioCtx.currentTime;
         if (isPlaying) {
           gainNode.gain.cancelScheduledValues(now);
-          gainNode.gain.linearRampToValueAtTime(0.05, now + 1); // Fade to 5% volume
+          gainNode.gain.linearRampToValueAtTime(0.05, now + 1);
         } else {
           gainNode.gain.cancelScheduledValues(now);
-          gainNode.gain.linearRampToValueAtTime(0, now + 0.5); // Fade to silence
+          gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
         }
       }
 
@@ -574,7 +596,6 @@
         const el = document.getElementById(id);
         if (el) el.value = val;
       }
-
       function bindInput(sliderId, numId) {
         const s = document.getElementById(sliderId),
           n = document.getElementById(numId);
@@ -645,7 +666,7 @@
         breatheBtn.innerText = isBreathing
           ? "Stop Breathing"
           : "Start Breathing";
-        toggleAudio(isBreathing); // TRIGGER AUDIO
+        toggleAudio(isBreathing);
       });
 
       function updateBreathing() {
@@ -657,10 +678,62 @@
         generatePetals();
       }
 
+      // --- RECORD BUTTON (Audio + Video) ---
+      const recordBtn = document.getElementById("recordBtn");
+      recordBtn.addEventListener("click", () => {
+        if (!window.MediaRecorder)
+          return alert("Browser does not support recording.");
+        const canvas = renderer.domElement;
+        const videoStream = canvas.captureStream(30);
+        const combinedStream = new MediaStream([
+          ...videoStream.getVideoTracks(),
+        ]);
+
+        // Add Audio if available
+        if (window.audioStream) {
+          const audioTracks = window.audioStream.getAudioTracks();
+          if (audioTracks.length > 0) combinedStream.addTrack(audioTracks[0]);
+        }
+
+        let mimeType = "video/webm";
+        if (MediaRecorder.isTypeSupported("video/webm; codecs=vp9"))
+          mimeType = "video/webm; codecs=vp9";
+
+        const recorder = new MediaRecorder(combinedStream, { mimeType });
+        const chunks = [];
+
+        recordBtn.innerText = "🔴 Rec";
+        recordBtn.style.background = "white";
+        recordBtn.style.color = "red";
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = () => {
+          recordBtn.innerText = "🎥 Loop";
+          recordBtn.style.background = "#ff0066";
+          recordBtn.style.color = "white";
+          const blob = new Blob(chunks, { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "waania-loop.webm";
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+        recorder.start();
+        setTimeout(() => recorder.stop(), 6000);
+      });
+
+      // --- SNAP BUTTON (Smart Share) ---
       document.getElementById("saveBtn").addEventListener("click", async () => {
         composer.render();
         const dataURL = renderer.domElement.toDataURL("image/png");
-        if (navigator.share) {
+
+        // Mobile Detection
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobile && navigator.share) {
+          // Mobile: Try Share Sheet (includes Save Image)
           const blob = await (await fetch(dataURL)).blob();
           const file = new File([blob], "waania-flower.png", {
             type: "image/png",
@@ -669,6 +742,7 @@
             await navigator.share({ files: [file], title: "My Flower" });
           } catch (e) {}
         } else {
+          // Desktop: Force Instant Download
           const link = document.createElement("a");
           link.download = "waania-flower.png";
           link.href = dataURL;
