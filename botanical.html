@@ -8,83 +8,89 @@
     />
     <title>Waania's Botanical Lab</title>
     <style>
-      /* --- BASE STYLES --- */
+      /* --- 1. BASE STYLES --- */
       body {
         margin: 0;
         overflow: hidden;
-        background: #111;
+        background: #111; /* Fallback */
         font-family: system-ui, -apple-system, sans-serif;
       }
       canvas {
         display: block;
       }
 
-      /* --- UI CONTAINER --- */
+      /* --- 2. GLASS UI PANEL --- */
       #ui-container {
         position: absolute;
         bottom: 20px;
         left: 20px;
         width: 300px;
-        max-width: 80%;
-        background: rgba(20, 20, 35, 0.85);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
+        max-width: 85%;
+        background: rgba(20, 20, 35, 0.85); /* Deep Blue Glass */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        padding: 20px;
-        transition: transform 0.3s ease, opacity 0.3s ease;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        padding: 24px;
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 16px;
         z-index: 10;
       }
 
+      /* Hidden State (Slide down) */
       #ui-container.hidden {
         transform: translateY(150%);
         opacity: 0;
         pointer-events: none;
       }
 
-      /* --- HEADER --- */
+      /* --- 3. TYPOGRAPHY & HEADER --- */
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px;
       }
       h1 {
         margin: 0;
-        font-size: 1rem;
-        color: white;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.9);
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
+        letter-spacing: 2px;
+        font-weight: 800;
       }
       .close-btn {
         background: none;
         border: none;
-        color: #666;
+        color: rgba(255, 255, 255, 0.5);
         font-size: 1.2rem;
         cursor: pointer;
         padding: 5px;
+        transition: color 0.2s;
       }
       .close-btn:hover {
         color: white;
       }
 
-      /* --- SHOW BUTTON --- */
+      /* --- 4. SHOW BUTTON (Floating Icon) --- */
       #show-ui-btn {
         position: absolute;
-        bottom: 20px;
-        left: 20px;
+        bottom: 25px;
+        left: 25px;
         background: rgba(20, 20, 35, 0.9);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: white;
-        padding: 12px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         cursor: pointer;
         z-index: 5;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -94,71 +100,138 @@
         transform: scale(0.9);
       }
 
-      /* --- CONTROLS --- */
+      /* --- 5. INPUTS & CONTROLS --- */
       .control-row {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
       }
       .label-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.85rem;
-        color: #ccc;
+        font-size: 0.8rem;
+        color: #aaa;
+        font-weight: 500;
       }
       .input-group {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
 
+      /* Custom Range Slider */
       input[type="range"] {
         flex-grow: 1;
-        accent-color: #ff0066;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        -webkit-appearance: none;
         cursor: pointer;
       }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #ff0066;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(255, 0, 102, 0.5);
+        margin-top: -5px; /* Alignment fix */
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 10px;
+      }
+
+      /* Number Box */
       input[type="number"] {
-        width: 50px;
-        background: rgba(0, 0, 0, 0.3);
+        width: 45px;
+        background: rgba(0, 0, 0, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
+        border-radius: 6px;
         color: white;
-        padding: 4px;
-        font-size: 0.9rem;
+        padding: 6px;
+        font-size: 0.85rem;
         text-align: center;
+        font-family: monospace;
       }
       input[type="number"]::-webkit-inner-spin-button {
         -webkit-appearance: none;
       }
+
+      /* Color Picker */
       input[type="color"] {
         width: 100%;
-        height: 35px;
+        height: 40px;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
         background: none;
       }
 
-      /* --- SNAP BUTTON --- */
+      /* --- 6. ACTION BUTTONS --- */
+      .action-btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      /* Mutate Button */
+      #mutateBtn {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 0, 102, 0.1),
+          rgba(255, 0, 102, 0.2)
+        );
+        border: 1px solid rgba(255, 0, 102, 0.3);
+        color: #ff3388;
+        margin-bottom: 10px;
+      }
+      #mutateBtn:hover {
+        background: linear-gradient(135deg, #ff0066, #ff3388);
+        color: white;
+        box-shadow: 0 0 20px rgba(255, 0, 102, 0.4);
+      }
+
+      /* Breathe Button */
+      #breatheBtn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ddd;
+      }
+      #breatheBtn.active {
+        background: rgba(0, 255, 128, 0.15);
+        border-color: rgba(0, 255, 128, 0.4);
+        color: #00ff80;
+      }
+
+      /* Snap Button (Bottom Right) */
       #saveBtn {
         position: absolute;
-        bottom: 20px;
-        right: 20px;
+        bottom: 25px;
+        right: 25px;
         background: white;
         color: #1a1a2e;
         border: none;
-        padding: 15px 25px;
-        border-radius: 30px;
-        font-weight: bold;
+        padding: 16px 28px;
+        border-radius: 50px;
+        font-weight: 800;
         font-size: 1rem;
         cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         z-index: 100;
-        transition: transform 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
       }
       #saveBtn:active {
         transform: scale(0.95);
+      }
+      #saveBtn:hover {
+        box-shadow: 0 6px 25px rgba(255, 255, 255, 0.4);
       }
     </style>
 
@@ -197,6 +270,8 @@
         <h1>Botanical Lab</h1>
         <button class="close-btn" id="hide-ui-btn">✕</button>
       </div>
+
+      <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
 
       <div class="control-row">
         <div class="label-row"><label>Petal Count</label></div>
@@ -257,21 +332,8 @@
       </div>
 
       <div class="control-row">
-        <div class="label-row"><label>Life Mode</label></div>
-        <button
-          id="breatheBtn"
-          style="
-            width: 100%;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-          "
-        >
-          Start Breathing
-        </button>
+        <div class="label-row"><label>Animation</label></div>
+        <button id="breatheBtn" class="action-btn">Start Breathing</button>
       </div>
     </div>
 
@@ -281,50 +343,9 @@
       import * as THREE from "three";
       import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-      // HELPER: Generates floating pollen particles
-      function createParticles() {
-        const particleCount = 200;
-        const geometry = new THREE.BufferGeometry();
-        const positions = [];
-        const velocities = []; // To store random movement speeds
+      // --- 1. ASSET GENERATORS (Procedural Textures) ---
 
-        for (let i = 0; i < particleCount; i++) {
-          // Random position within a box of -10 to 10
-          const x = (Math.random() - 0.5) * 20;
-          const y = (Math.random() - 0.5) * 20;
-          const z = (Math.random() - 0.5) * 20;
-          positions.push(x, y, z);
-
-          // Random velocity (slow drift)
-          velocities.push(
-            (Math.random() - 0.5) * 0.02,
-            (Math.random() - 0.5) * 0.02,
-            (Math.random() - 0.5) * 0.02
-          );
-        }
-
-        geometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions, 3)
-        );
-
-        // Custom property to store speeds
-        geometry.userData = { velocities: velocities };
-
-        const material = new THREE.PointsMaterial({
-          color: 0xffffff,
-          size: 0.1, // Tiny specks
-          transparent: true,
-          opacity: 0.6,
-          sizeAttenuation: true, // Makes them smaller when far away
-        });
-
-        const particles = new THREE.Points(geometry, material);
-        return particles;
-      }
-
-      // --- 1. PROCEDURAL TEXTURE GENERATOR (The Velvet Logic) ---
-      // HELPER: Generates a high-contrast vein pattern
+      // A. VEIN TEXTURE (Color + Bump)
       function createVeinTexture() {
         const size = 512;
         const canvas = document.createElement("canvas");
@@ -332,22 +353,20 @@
         canvas.height = size;
         const ctx = canvas.getContext("2d");
 
-        // 1. Fill Background with White (Pure Color)
+        // White Background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, size, size);
 
-        // 2. Draw Veins (Gray lines = Darker areas on petal)
-        // We draw random wavy vertical lines
-        ctx.strokeStyle = "#999999"; // Gray veins
+        // Draw Gray Veins
+        ctx.strokeStyle = "#999999";
         ctx.lineWidth = 2;
-        ctx.globalAlpha = 0.3; // Semi-transparent
+        ctx.globalAlpha = 0.3;
 
         for (let i = 0; i < 40; i++) {
           const startX = Math.random() * size;
           ctx.beginPath();
           ctx.moveTo(startX, 0);
-
-          // Make a wavy curve down to the bottom
+          // Random wavy curve
           ctx.bezierCurveTo(
             startX + (Math.random() * 100 - 50),
             size / 3,
@@ -358,14 +377,49 @@
           );
           ctx.stroke();
         }
-
         const texture = new THREE.CanvasTexture(canvas);
         return texture;
       }
 
-      // --- 2. SETUP ---
+      // B. PARTICLES (Pollen)
+      function createParticles() {
+        const count = 300;
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = [];
+
+        for (let i = 0; i < count; i++) {
+          positions.push(
+            (Math.random() - 0.5) * 25,
+            (Math.random() - 0.5) * 25,
+            (Math.random() - 0.5) * 25
+          );
+          velocities.push(
+            (Math.random() - 0.5) * 0.015,
+            (Math.random() - 0.5) * 0.015,
+            (Math.random() - 0.5) * 0.015
+          );
+        }
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(positions, 3)
+        );
+        geometry.userData = { velocities: velocities };
+
+        const material = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 0.15,
+          transparent: true,
+          opacity: 0.5,
+          sizeAttenuation: true,
+        });
+        return new THREE.Points(geometry, material);
+      }
+
+      // --- 2. SCENE SETUP ---
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x1a1a2e);
+      scene.background = new THREE.Color(0x1a1a2e); // Dark Blue
+
       const camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
@@ -381,35 +435,41 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // LIGHTS (Dimmed Ambient to show texture bumps)
+      // LIGHTING (Dimmed Ambient for texture contrast)
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
       scene.add(ambientLight);
+
       const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
       pointLight.position.set(10, 10, 10);
       scene.add(pointLight);
 
-      // CONTROLS (Auto-Rotate is OFF)
+      // Backlight for translucency effect
+      const backLight = new THREE.PointLight(0xff0066, 0.5, 100);
+      backLight.position.set(-10, 5, -10);
+      scene.add(backLight);
+
+      // CONTROLS
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.autoRotate = false; // <--- STOPPED ROTATION
-      controls.autoRotateSpeed = 1.0;
+      controls.dampingFactor = 0.05;
+      controls.autoRotate = false; // STOPPED per request
 
-      // --- 3. FLOWER ENGINE ---
+      // --- 3. OBJECT SETUP ---
       const flowerGroup = new THREE.Group();
       flowerGroup.position.y = 2;
       scene.add(flowerGroup);
 
-      // Add Atmosphere
+      // Add Pollen
       const particles = createParticles();
       scene.add(particles);
 
-      // Groups
-      const stemGroup = new THREE.Group();
-      const petalGroup = new THREE.Group();
+      // Separate groups for optimization
+      const stemGroup = new THREE.Group(); // Static
+      const petalGroup = new THREE.Group(); // Dynamic
       flowerGroup.add(stemGroup);
       flowerGroup.add(petalGroup);
 
-      // GEOMETRY
+      // --- 4. GEOMETRY & MATERIALS ---
       const petalGeometry = new THREE.SphereGeometry(0.5, 32, 16);
       petalGeometry.translate(0, 0.5, 0);
 
@@ -423,38 +483,35 @@
       ]);
       const stemGeometry = new THREE.TubeGeometry(stemPath, 20, 0.15, 8, false);
 
-      // MATERIALS (Updated with Texture)
-      // Generate the VEINS
+      // Generate Texture
       const veinTexture = createVeinTexture();
 
-      // Base Material
+      // Materials
       const baseMaterial = new THREE.MeshPhongMaterial({
-        shininess: 20,
+        shininess: 15,
         side: THREE.DoubleSide,
-
-        // KEY CHANGE: Use the texture for COLOR, not just BUMPS
-        map: veinTexture,
-
-        // Keep the bump map for depth, reusing the same texture
-        bumpMap: veinTexture,
+        map: veinTexture, // Color Pattern
+        bumpMap: veinTexture, // Surface Depth
         bumpScale: 0.05,
       });
 
       const stemMaterial = new THREE.MeshPhongMaterial({
         color: 0x339933,
-        shininess: 10,
+        shininess: 5,
         flatShading: true,
       });
 
-      // --- GENERATOR 1: STEM (Run Once) ---
+      // --- 5. GENERATORS ---
+
       function generateStem() {
         stemGroup.clear();
+        // Stem Tube
         stemGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
 
-        // SEPALS: Only 3 now
+        // Sepals (Limit to 3)
         for (let i = 0; i < 3; i++) {
           const p = new THREE.Object3D();
-          p.rotation.z = (i / 3) * (Math.PI * 2); // Distribute 3 evenly
+          p.rotation.z = (i / 3) * (Math.PI * 2);
           const s = new THREE.Mesh(petalGeometry, stemMaterial);
           s.scale.set(0.6, 4, 0.1);
           s.rotation.x = -2.0;
@@ -463,14 +520,13 @@
           stemGroup.add(p);
         }
 
-        // THORNS & LEAVES
+        // Thorns & Leaves
         const stemLen = 20;
         for (let i = 1; i < stemLen - 1; i++) {
           const t = i / stemLen;
           const point = stemPath.getPointAt(t);
           const tangent = stemPath.getTangentAt(t);
 
-          // Thorns
           if (Math.random() < 0.2) {
             const thorn = new THREE.Mesh(thornGeometry, stemMaterial);
             thorn.position.copy(point);
@@ -482,7 +538,6 @@
             thorn.rotateZ(Math.random() * Math.PI * 2);
             stemGroup.add(thorn);
           }
-          // Leaves
           if (t > 0.3 && Math.random() < 0.15) {
             const leaf = new THREE.Mesh(petalGeometry, stemMaterial);
             leaf.scale.set(0.5, 1.5, 0.05);
@@ -498,7 +553,6 @@
         }
       }
 
-      // --- GENERATOR 2: PETALS (Run Often) ---
       function generatePetals() {
         petalGroup.clear();
 
@@ -515,16 +569,18 @@
             const angle = (i / count) * (Math.PI * 2);
             pivot.rotation.z = angle + r * 0.5;
 
+            // Clone material for color variation
             const mat = baseMaterial.clone();
             const col = new THREE.Color(colorVal);
             const hsl = {};
             col.getHSL(hsl);
+            // Inner petals darker
             mat.color.setHSL(hsl.h, hsl.s, hsl.l + (r * 0.1 - 0.1));
 
             const petal = new THREE.Mesh(petalGeometry, mat);
             petal.rotation.x = bloom + r * 0.3;
 
-            // Parametric Shape
+            // Shape Logic
             const scale = 1 - r * 0.25;
             petal.scale.set(scale * wid, scale * len, scale * 0.1);
 
@@ -534,7 +590,9 @@
         }
       }
 
-      // --- UI SYNC ---
+      // --- 6. EVENT LISTENERS ---
+
+      // Helper to bind Inputs
       function bindInput(sliderId, numberId) {
         const slider = document.getElementById(sliderId);
         const number = document.getElementById(numberId);
@@ -555,49 +613,72 @@
         .getElementById("petalColor")
         .addEventListener("input", generatePetals);
 
+      // UI Toggles
+      const ui = document.getElementById("ui-container");
       document
         .getElementById("hide-ui-btn")
-        .addEventListener("click", () =>
-          document.getElementById("ui-container").classList.add("hidden")
-        );
+        .addEventListener("click", () => ui.classList.add("hidden"));
       document
         .getElementById("show-ui-btn")
-        .addEventListener("click", () =>
-          document.getElementById("ui-container").classList.remove("hidden")
-        );
+        .addEventListener("click", () => ui.classList.remove("hidden"));
 
-      // --- BREATHING LOGIC ---
+      // MUTATE BUTTON
+      document.getElementById("mutateBtn").addEventListener("click", () => {
+        const rCount = Math.floor(Math.random() * 45) + 5;
+        const rBloom = (Math.random() * 1.5).toFixed(1);
+        const rLength = (Math.random() * 5 + 2).toFixed(1);
+        const rWidth = (Math.random() * 1.9 + 0.1).toFixed(1);
+
+        // Random Vibrant Color
+        const rColor = new THREE.Color().setHSL(
+          Math.random(),
+          0.5 + Math.random() * 0.5,
+          0.4 + Math.random() * 0.2
+        );
+        const hex = "#" + rColor.getHexString();
+
+        // Update DOM
+        document.getElementById("petalCount").value = rCount;
+        document.getElementById("petalCountNum").value = rCount;
+        document.getElementById("bloomRadius").value = rBloom;
+        document.getElementById("bloomRadiusNum").value = rBloom;
+        document.getElementById("petalLength").value = rLength;
+        document.getElementById("petalLengthNum").value = rLength;
+        document.getElementById("petalWidth").value = rWidth;
+        document.getElementById("petalWidthNum").value = rWidth;
+        document.getElementById("petalColor").value = hex;
+
+        generatePetals();
+      });
+
+      // BREATHING LOGIC
       let isBreathing = false;
       let breatheTime = 0;
       const breatheBtn = document.getElementById("breatheBtn");
-
       breatheBtn.addEventListener("click", () => {
         isBreathing = !isBreathing;
+        breatheBtn.classList.toggle("active");
         breatheBtn.innerText = isBreathing
           ? "Stop Breathing"
           : "Start Breathing";
-        breatheBtn.style.background = isBreathing
-          ? "rgba(0, 255, 100, 0.2)"
-          : "rgba(255,255,255,0.1)";
       });
 
       function updateBreathing() {
         if (!isBreathing) return;
         breatheTime += 0.02;
         const val = 0.5 + Math.sin(breatheTime) * 0.3;
-
         document.getElementById("bloomRadius").value = val;
         document.getElementById("bloomRadiusNum").value = val.toFixed(2);
-        generatePetals(); // Rebuilds petals only
+        generatePetals();
       }
 
-      // --- SNAPSHOT ---
+      // SNAPSHOT LOGIC
       document.getElementById("saveBtn").addEventListener("click", async () => {
         renderer.render(scene, camera);
         const dataURL = renderer.domElement.toDataURL("image/png");
         if (navigator.share) {
           const blob = await (await fetch(dataURL)).blob();
-          const file = new File([blob], "waania-rose.png", {
+          const file = new File([blob], "waania-flower.png", {
             type: "image/png",
           });
           try {
@@ -605,13 +686,20 @@
           } catch (e) {}
         } else {
           const link = document.createElement("a");
-          link.download = "flower.png";
+          link.download = "waania-flower.png";
           link.href = dataURL;
           link.click();
         }
       });
 
-      // --- INIT ---
+      // RESIZE HANDLER
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // --- 7. ANIMATION LOOP ---
       generateStem();
       generatePetals();
 
@@ -620,31 +708,38 @@
         updateBreathing();
         controls.update();
 
-        // --- NEW: Particle Animation ---
+        // Animate Particles
         const positions = particles.geometry.attributes.position.array;
-        const velocities = particles.geometry.userData.velocities;
+        const vels = particles.geometry.userData.velocities;
+
+        // The "Box" size (15 units in every direction)
+        const range = 15;
 
         for (let i = 0; i < positions.length; i += 3) {
-          // Update X, Y, Z
-          positions[i] += velocities[i]; // X
-          positions[i + 1] += velocities[i + 1]; // Y
-          positions[i + 2] += velocities[i + 2]; // Z
+          // 1. Move the particle
+          positions[i] += vels[i]; // X
+          positions[i + 1] += vels[i + 1]; // Y
+          positions[i + 2] += vels[i + 2]; // Z
 
-          // Loop them back if they fly too far (keep them in the box)
-          if (positions[i + 1] > 10) positions[i + 1] = -10;
-          if (positions[i + 1] < -10) positions[i + 1] = 10;
+          // 2. Check Boundaries (The "Pac-Man" Wrap)
+
+          // If it goes too far RIGHT, move it to LEFT
+          if (positions[i] > range) positions[i] = -range;
+          if (positions[i] < -range) positions[i] = range;
+
+          // If it goes too far UP, move it DOWN
+          if (positions[i + 1] > range) positions[i + 1] = -range;
+          if (positions[i + 1] < -range) positions[i + 1] = range;
+
+          // If it goes too far BACK, move it FRONT
+          if (positions[i + 2] > range) positions[i + 2] = -range;
+          if (positions[i + 2] < -range) positions[i + 2] = range;
         }
-        particles.geometry.attributes.position.needsUpdate = true; // Tell GPU to update
 
+        particles.geometry.attributes.position.needsUpdate = true;
         renderer.render(scene, camera);
       }
       animate();
-
-      window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
     </script>
   </body>
 </html>
