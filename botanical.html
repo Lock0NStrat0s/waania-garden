@@ -238,7 +238,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
         }
       }
     </script>
@@ -341,11 +342,13 @@
 
     <script type="module">
       import * as THREE from "three";
-      import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
-      // --- 1. ASSET GENERATORS (Procedural Textures) ---
+      // --- 1. ASSET GENERATORS ---
 
-      // A. VEIN TEXTURE (Color + Bump)
       function createVeinTexture() {
         const size = 512;
         const canvas = document.createElement("canvas");
@@ -353,11 +356,9 @@
         canvas.height = size;
         const ctx = canvas.getContext("2d");
 
-        // White Background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, size, size);
 
-        // Draw Gray Veins
         ctx.strokeStyle = "#999999";
         ctx.lineWidth = 2;
         ctx.globalAlpha = 0.3;
@@ -366,7 +367,6 @@
           const startX = Math.random() * size;
           ctx.beginPath();
           ctx.moveTo(startX, 0);
-          // Random wavy curve
           ctx.bezierCurveTo(
             startX + (Math.random() * 100 - 50),
             size / 3,
@@ -377,11 +377,9 @@
           );
           ctx.stroke();
         }
-        const texture = new THREE.CanvasTexture(canvas);
-        return texture;
+        return new THREE.CanvasTexture(canvas);
       }
 
-      // B. PARTICLES (Pollen)
       function createParticles() {
         const count = 300;
         const geometry = new THREE.BufferGeometry();
@@ -410,7 +408,7 @@
           color: 0xffffff,
           size: 0.15,
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.8, // Increased opacity for Bloom
           sizeAttenuation: true,
         });
         return new THREE.Points(geometry, material);
@@ -418,7 +416,7 @@
 
       // --- 2. SCENE SETUP ---
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x1a1a2e); // Dark Blue
+      scene.background = new THREE.Color(0x050510); // Darker blue for contrast
 
       const camera = new THREE.PerspectiveCamera(
         75,
@@ -433,18 +431,37 @@
         preserveDrawingBuffer: true,
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio); // Sharpness
+      renderer.toneMapping = THREE.ReinhardToneMapping; // Better light handling
       document.body.appendChild(renderer.domElement);
 
-      // LIGHTING (Dimmed Ambient for texture contrast)
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      // --- POST PROCESSING (THE GLOW) ---
+      const renderScene = new RenderPass(scene, camera);
+
+      // Resolution, Strength, Radius, Threshold
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5,
+        0.4,
+        0.85
+      );
+      bloomPass.strength = 0.5; // Intensity of glow
+      bloomPass.radius = 0.5; // Spread of glow
+      bloomPass.threshold = 0.1; // Only bright things glow
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(renderScene);
+      composer.addPass(bloomPass);
+
+      // LIGHTING
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Dim ambient
       scene.add(ambientLight);
 
-      const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+      const pointLight = new THREE.PointLight(0xffffff, 1.2, 100);
       pointLight.position.set(10, 10, 10);
       scene.add(pointLight);
 
-      // Backlight for translucency effect
-      const backLight = new THREE.PointLight(0xff0066, 0.5, 100);
+      const backLight = new THREE.PointLight(0xff0066, 1.0, 100); // Brighter backlight
       backLight.position.set(-10, 5, -10);
       scene.add(backLight);
 
@@ -452,20 +469,18 @@
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      controls.autoRotate = false; // STOPPED per request
+      controls.autoRotate = false;
 
       // --- 3. OBJECT SETUP ---
       const flowerGroup = new THREE.Group();
       flowerGroup.position.y = 2;
       scene.add(flowerGroup);
 
-      // Add Pollen
       const particles = createParticles();
       scene.add(particles);
 
-      // Separate groups for optimization
-      const stemGroup = new THREE.Group(); // Static
-      const petalGroup = new THREE.Group(); // Dynamic
+      const stemGroup = new THREE.Group();
+      const petalGroup = new THREE.Group();
       flowerGroup.add(stemGroup);
       flowerGroup.add(petalGroup);
 
@@ -483,16 +498,16 @@
       ]);
       const stemGeometry = new THREE.TubeGeometry(stemPath, 20, 0.15, 8, false);
 
-      // Generate Texture
       const veinTexture = createVeinTexture();
 
-      // Materials
       const baseMaterial = new THREE.MeshPhongMaterial({
-        shininess: 15,
+        shininess: 30,
         side: THREE.DoubleSide,
-        map: veinTexture, // Color Pattern
-        bumpMap: veinTexture, // Surface Depth
+        map: veinTexture,
+        bumpMap: veinTexture,
         bumpScale: 0.05,
+        emissive: 0x000000, // Important for bloom control
+        specular: 0x222222,
       });
 
       const stemMaterial = new THREE.MeshPhongMaterial({
@@ -502,13 +517,10 @@
       });
 
       // --- 5. GENERATORS ---
-
       function generateStem() {
         stemGroup.clear();
-        // Stem Tube
         stemGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
 
-        // Sepals (Limit to 3)
         for (let i = 0; i < 3; i++) {
           const p = new THREE.Object3D();
           p.rotation.z = (i / 3) * (Math.PI * 2);
@@ -520,7 +532,6 @@
           stemGroup.add(p);
         }
 
-        // Thorns & Leaves
         const stemLen = 20;
         for (let i = 1; i < stemLen - 1; i++) {
           const t = i / stemLen;
@@ -555,7 +566,6 @@
 
       function generatePetals() {
         petalGroup.clear();
-
         const count = parseInt(document.getElementById("petalCount").value);
         const bloom = parseFloat(document.getElementById("bloomRadius").value);
         const len = parseFloat(document.getElementById("petalLength").value);
@@ -569,18 +579,17 @@
             const angle = (i / count) * (Math.PI * 2);
             pivot.rotation.z = angle + r * 0.5;
 
-            // Clone material for color variation
             const mat = baseMaterial.clone();
             const col = new THREE.Color(colorVal);
             const hsl = {};
             col.getHSL(hsl);
-            // Inner petals darker
             mat.color.setHSL(hsl.h, hsl.s, hsl.l + (r * 0.1 - 0.1));
+
+            // Subtle Emissive glow for outer petals
+            if (r < 2) mat.emissive.setHSL(hsl.h, hsl.s, hsl.l * 0.1);
 
             const petal = new THREE.Mesh(petalGeometry, mat);
             petal.rotation.x = bloom + r * 0.3;
-
-            // Shape Logic
             const scale = 1 - r * 0.25;
             petal.scale.set(scale * wid, scale * len, scale * 0.1);
 
@@ -590,30 +599,41 @@
         }
       }
 
-      // --- 6. EVENT LISTENERS ---
+      // --- 6. HELPERS & EVENTS ---
 
-      // Helper to bind Inputs
+      // FIXED: Helper function for safe updates
+      function updateInput(sliderId, numberId, val) {
+        const slider = document.getElementById(sliderId);
+        const num = document.getElementById(numberId);
+        if (slider && num) {
+          slider.value = val;
+          num.value = val;
+        }
+      }
+
       function bindInput(sliderId, numberId) {
         const slider = document.getElementById(sliderId);
         const number = document.getElementById(numberId);
         slider.addEventListener("input", () => {
           number.value = slider.value;
           generatePetals();
+          saveState();
         });
         number.addEventListener("input", () => {
           slider.value = number.value;
           generatePetals();
+          saveState();
         });
       }
       bindInput("petalCount", "petalCountNum");
       bindInput("bloomRadius", "bloomRadiusNum");
       bindInput("petalLength", "petalLengthNum");
       bindInput("petalWidth", "petalWidthNum");
-      document
-        .getElementById("petalColor")
-        .addEventListener("input", generatePetals);
+      document.getElementById("petalColor").addEventListener("input", () => {
+        generatePetals();
+        saveState();
+      });
 
-      // UI Toggles
       const ui = document.getElementById("ui-container");
       document
         .getElementById("hide-ui-btn")
@@ -622,36 +642,28 @@
         .getElementById("show-ui-btn")
         .addEventListener("click", () => ui.classList.remove("hidden"));
 
-      // MUTATE BUTTON
       document.getElementById("mutateBtn").addEventListener("click", () => {
         const rCount = Math.floor(Math.random() * 45) + 5;
         const rBloom = (Math.random() * 1.5).toFixed(1);
         const rLength = (Math.random() * 5 + 2).toFixed(1);
         const rWidth = (Math.random() * 1.9 + 0.1).toFixed(1);
-
-        // Random Vibrant Color
         const rColor = new THREE.Color().setHSL(
           Math.random(),
           0.5 + Math.random() * 0.5,
           0.4 + Math.random() * 0.2
         );
-        const hex = "#" + rColor.getHexString();
 
-        // Update DOM
-        document.getElementById("petalCount").value = rCount;
-        document.getElementById("petalCountNum").value = rCount;
-        document.getElementById("bloomRadius").value = rBloom;
-        document.getElementById("bloomRadiusNum").value = rBloom;
-        document.getElementById("petalLength").value = rLength;
-        document.getElementById("petalLengthNum").value = rLength;
-        document.getElementById("petalWidth").value = rWidth;
-        document.getElementById("petalWidthNum").value = rWidth;
-        document.getElementById("petalColor").value = hex;
+        updateInput("petalCount", "petalCountNum", rCount);
+        updateInput("bloomRadius", "bloomRadiusNum", rBloom);
+        updateInput("petalLength", "petalLengthNum", rLength);
+        updateInput("petalWidth", "petalWidthNum", rWidth);
+        document.getElementById("petalColor").value =
+          "#" + rColor.getHexString();
 
         generatePetals();
+        saveState();
       });
 
-      // BREATHING LOGIC
       let isBreathing = false;
       let breatheTime = 0;
       const breatheBtn = document.getElementById("breatheBtn");
@@ -672,9 +684,9 @@
         generatePetals();
       }
 
-      // SNAPSHOT LOGIC
       document.getElementById("saveBtn").addEventListener("click", async () => {
-        renderer.render(scene, camera);
+        // Render one frame cleanly without UI if needed
+        composer.render();
         const dataURL = renderer.domElement.toDataURL("image/png");
         if (navigator.share) {
           const blob = await (await fetch(dataURL)).blob();
@@ -692,52 +704,72 @@
         }
       });
 
-      // RESIZE HANDLER
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight); // Update Bloom size
       });
 
-      // --- 7. ANIMATION LOOP ---
+      // --- MEMORY SYSTEM ---
+      function saveState() {
+        const state = {
+          count: document.getElementById("petalCount").value,
+          bloom: document.getElementById("bloomRadius").value,
+          length: document.getElementById("petalLength").value,
+          width: document.getElementById("petalWidth").value,
+          color: document.getElementById("petalColor").value,
+        };
+        localStorage.setItem("waania-flower-state", JSON.stringify(state));
+      }
+
+      function loadState() {
+        const saved = localStorage.getItem("waania-flower-state");
+        if (saved) {
+          const state = JSON.parse(saved);
+          updateInput("petalCount", "petalCountNum", state.count);
+          updateInput("bloomRadius", "bloomRadiusNum", state.bloom);
+          updateInput("petalLength", "petalLengthNum", state.length);
+          updateInput("petalWidth", "petalWidthNum", state.width);
+          document.getElementById("petalColor").value = state.color;
+          generatePetals();
+        }
+      }
+
+      // --- INIT & ANIMATE ---
       generateStem();
-      generatePetals();
+      if (localStorage.getItem("waania-flower-state")) {
+        loadState();
+      } else {
+        generatePetals();
+      }
 
       function animate() {
         requestAnimationFrame(animate);
         updateBreathing();
         controls.update();
 
-        // Animate Particles
         const positions = particles.geometry.attributes.position.array;
         const vels = particles.geometry.userData.velocities;
-
-        // The "Box" size (15 units in every direction)
         const range = 15;
 
         for (let i = 0; i < positions.length; i += 3) {
-          // 1. Move the particle
-          positions[i] += vels[i]; // X
-          positions[i + 1] += vels[i + 1]; // Y
-          positions[i + 2] += vels[i + 2]; // Z
+          positions[i] += vels[i];
+          positions[i + 1] += vels[i + 1];
+          positions[i + 2] += vels[i + 2];
 
-          // 2. Check Boundaries (The "Pac-Man" Wrap)
-
-          // If it goes too far RIGHT, move it to LEFT
           if (positions[i] > range) positions[i] = -range;
           if (positions[i] < -range) positions[i] = range;
-
-          // If it goes too far UP, move it DOWN
           if (positions[i + 1] > range) positions[i + 1] = -range;
           if (positions[i + 1] < -range) positions[i + 1] = range;
-
-          // If it goes too far BACK, move it FRONT
           if (positions[i + 2] > range) positions[i + 2] = -range;
           if (positions[i + 2] < -range) positions[i + 2] = range;
         }
 
         particles.geometry.attributes.position.needsUpdate = true;
-        renderer.render(scene, camera);
+
+        // IMPORTANT: Use composer, not renderer
+        composer.render();
       }
       animate();
     </script>
