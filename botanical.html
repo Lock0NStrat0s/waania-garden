@@ -12,7 +12,7 @@
       body {
         margin: 0;
         overflow: hidden;
-        background: #050510;
+        background: #000;
         font-family: system-ui, -apple-system, sans-serif;
       }
       canvas {
@@ -33,7 +33,6 @@
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        /* Layout */
         display: flex;
         flex-direction: column;
         z-index: 20;
@@ -44,7 +43,7 @@
         pointer-events: none;
       }
 
-      /* --- HEADER (Fixed) --- */
+      /* --- HEADER --- */
       .header {
         display: flex;
         justify-content: space-between;
@@ -70,7 +69,7 @@
         padding: 5px;
       }
 
-      /* --- SCROLLABLE AREA --- */
+      /* --- SCROLL CONTENT --- */
       .scroll-content {
         overflow-y: auto;
         padding: 15px 20px 20px 20px;
@@ -162,6 +161,16 @@
         cursor: pointer;
         background: none;
       }
+      select {
+        width: 100%;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.4);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        -webkit-appearance: none;
+      }
 
       .action-btn {
         width: 100%;
@@ -207,7 +216,6 @@
         opacity: 0;
         pointer-events: none;
       }
-
       .fab-btn {
         border: none;
         padding: 0 24px;
@@ -312,6 +320,17 @@
       </div>
       <div class="scroll-content">
         <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
+
+        <div class="control-row">
+          <div class="label-row"><label>Environment</label></div>
+          <select id="bgSelect">
+            <option value="space" selected>Deep Space</option>
+            <option value="sunset">Golden Hour</option>
+            <option value="forest">Misty Garden</option>
+            <option value="midnight">Midnight</option>
+          </select>
+        </div>
+
         <div class="control-row">
           <div class="label-row"><label>Petal Count</label></div>
           <div class="input-group">
@@ -386,7 +405,6 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
-      // --- MOBILE DETECTION ---
       const isMobile =
         /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
         window.innerWidth < 800;
@@ -454,7 +472,6 @@
         return new THREE.CanvasTexture(canvas);
       }
       function createParticles() {
-        // PERFORMANCE: Fewer particles on mobile
         const count = isMobile ? 100 : 300;
         const geometry = new THREE.BufferGeometry();
         const pos = [],
@@ -488,9 +505,40 @@
         );
       }
 
+      // --- BACKGROUND GENERATOR (THE FIX) ---
+      function updateBackground(type) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 2;
+        canvas.height = 512; // 1D Gradient
+        const ctx = canvas.getContext("2d");
+        const grad = ctx.createLinearGradient(0, 0, 0, 512);
+
+        if (type === "space") {
+          grad.addColorStop(0, "#02020a");
+          grad.addColorStop(0.5, "#0a0a20");
+          grad.addColorStop(1, "#1b1b3a");
+        } else if (type === "sunset") {
+          grad.addColorStop(0, "#2b102f");
+          grad.addColorStop(0.5, "#5e2846");
+          grad.addColorStop(1, "#a85751");
+        } else if (type === "forest") {
+          grad.addColorStop(0, "#0a150f");
+          grad.addColorStop(0.5, "#142820");
+          grad.addColorStop(1, "#243d30");
+        } else {
+          grad.addColorStop(0, "#000000");
+          grad.addColorStop(1, "#111111");
+        }
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 2, 512);
+        scene.background = new THREE.CanvasTexture(canvas);
+      }
+
       // --- SCENE ---
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x050510);
+      updateBackground("space"); // Default
+
       const camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
@@ -504,7 +552,6 @@
         preserveDrawingBuffer: true,
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      // PERFORMANCE: Cap Pixel Ratio at 2 for high-density mobile screens to save GPU
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.toneMapping = THREE.ReinhardToneMapping;
       document.body.appendChild(renderer.domElement);
@@ -544,7 +591,6 @@
       flowerGroup.add(stemGroup);
       flowerGroup.add(petalGroup);
 
-      // PERFORMANCE: Lower polygon count on mobile (16 segments vs 32)
       const petalGeo = new THREE.SphereGeometry(
         0.5,
         isMobile ? 16 : 32,
@@ -666,6 +712,12 @@
         saveState();
       });
 
+      // BACKGROUND LISTENER (Now calls the Texture Generator)
+      document.getElementById("bgSelect").addEventListener("change", (e) => {
+        updateBackground(e.target.value);
+        saveState();
+      });
+
       const ui = document.getElementById("ui-container");
       const openBtn = document.getElementById("show-ui-btn");
       const actionbar = document.querySelector(".action-bar");
@@ -683,6 +735,7 @@
           0.5 + Math.random() * 0.5,
           0.4 + Math.random() * 0.2
         );
+
         updateInput("petalCount", rCount);
         updateInput("petalCountNum", rCount);
         updateInput("bloomRadius", (Math.random() * 1.5).toFixed(1));
@@ -702,6 +755,10 @@
         );
         document.getElementById("petalColor").value =
           "#" + rColor.getHexString();
+
+        // REMOVED: Background randomization code.
+        // Now the background stays whatever the user selected.
+
         generatePetals();
         saveState();
       });
@@ -787,6 +844,7 @@
           length: document.getElementById("petalLength").value,
           width: document.getElementById("petalWidth").value,
           color: document.getElementById("petalColor").value,
+          bg: document.getElementById("bgSelect").value,
         };
         localStorage.setItem("waania-flower-state", JSON.stringify(state));
       }
@@ -802,6 +860,10 @@
           updateInput("petalWidth", state.width);
           updateInput("petalWidthNum", state.width);
           document.getElementById("petalColor").value = state.color;
+          if (state.bg) {
+            updateBackground(state.bg);
+            document.getElementById("bgSelect").value = state.bg;
+          }
           generatePetals();
         }
       }
