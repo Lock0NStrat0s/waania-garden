@@ -230,13 +230,7 @@
       // COLOR LISTENER
       document
         .getElementById("petalColor")
-        .addEventListener("input", (event) => {
-          // 1. Get the new hex color from the picker
-          const newColor = event.target.value;
-
-          // 2. Update the material instantly
-          material.color.set(newColor);
-        });
+        .addEventListener("input", generateFlower);
     </script>
   </body>
 </html>
