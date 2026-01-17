@@ -285,18 +285,38 @@
         .getElementById("petalColor")
         .addEventListener("input", generateFlower);
 
-      document.getElementById("saveBtn").addEventListener("click", () => {
-        // 1. Force a render right now (so the buffer isn't empty)
+      document.getElementById("saveBtn").addEventListener("click", async () => {
+        // 1. Force a render to grab the latest frame
         renderer.render(scene, camera);
 
-        // 2. Convert the Canvas pixels to a PNG data URL
-        const imgData = renderer.domElement.toDataURL("image/png");
+        // 2. Get the Data URL (Base64 string)
+        const dataURL = renderer.domElement.toDataURL("image/png");
 
-        // 3. Create a fake link to trigger the download
-        const link = document.createElement("a");
-        link.download = "waania-rose.png";
-        link.href = imgData;
-        link.click(); // Simulate a click
+        // 3. Check if "Native Sharing" is supported (Mobile)
+        if (navigator.share) {
+          // Convert Base64 to a standard File object (Blob)
+          const blob = await (await fetch(dataURL)).blob();
+          const file = new File([blob], "waania-rose.png", {
+            type: "image/png",
+          });
+
+          // Trigger the Native Mobile Share Sheet
+          try {
+            await navigator.share({
+              files: [file],
+              title: "Waania's Rose",
+              text: "I made this for you in the Botanical Lab.",
+            });
+          } catch (error) {
+            console.log("Sharing failed or cancelled:", error);
+          }
+        } else {
+          // 4. Fallback for Desktop (Old method)
+          const link = document.createElement("a");
+          link.download = "waania-rose.png";
+          link.href = dataURL;
+          link.click();
+        }
       });
     </script>
   </body>
