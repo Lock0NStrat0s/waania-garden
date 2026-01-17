@@ -19,16 +19,16 @@
         display: block;
       }
 
-      /* --- UI CONTAINER (The Control Panel) --- */
+      /* --- UI CONTAINER (Control Panel) --- */
       #ui-container {
         position: absolute;
         bottom: 20px;
         left: 20px;
         width: 300px;
-        /* SAFETY LIMITS: */
-        max-width: 90%; /* Never wider than screen */
-        max-height: 50vh; /* Never taller than half screen */
-        overflow-y: auto; /* Scroll if too tall */
+        /* Mobile Safety: Never block full screen */
+        max-width: 90%;
+        max-height: 50vh;
+        overflow-y: auto;
 
         background: rgba(20, 20, 35, 0.85);
         backdrop-filter: blur(12px);
@@ -37,14 +37,13 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         padding: 20px;
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s;
         display: flex;
         flex-direction: column;
         gap: 16px;
-        z-index: 20; /* High priority */
+        z-index: 20;
+        transition: opacity 0.3s;
       }
       #ui-container.hidden {
-        transform: translateY(150%);
         opacity: 0;
         pointer-events: none;
       }
@@ -101,6 +100,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: opacity 0.3s;
+      }
+      #show-ui-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
       }
 
       /* --- INPUTS --- */
@@ -187,16 +191,21 @@
         color: #00ff80;
       }
 
-      /* --- ACTION BAR (Buttons) --- */
+      /* --- ACTION BAR (Top Right on Mobile) --- */
       .action-bar {
         position: absolute;
         bottom: 25px;
-        right: 25px;
+        right: 25px; /* Desktop Position */
         display: flex;
         gap: 15px;
         z-index: 100;
-        transition: all 0.3s ease;
+        transition: opacity 0.3s;
       }
+      .action-bar.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
       .fab-btn {
         border: none;
         padding: 0 24px;
@@ -214,7 +223,7 @@
       .fab-btn:active {
         transform: scale(0.95);
       }
-      #recordBtn {
+      #studioBtn {
         background: #ff0066;
         color: white;
       }
@@ -223,27 +232,43 @@
         color: #1a1a2e;
       }
 
-      /* --- MOBILE ADJUSTMENTS (The Fix) --- */
+      /* --- STUDIO OVERLAY --- */
+      #studio-msg {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px 20px;
+        border-radius: 30px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+        text-align: center;
+      }
+
+      /* --- MOBILE LAYOUT FIXES --- */
       @media (max-width: 600px) {
-        /* 1. Move Action Buttons to TOP RIGHT to stop blocking controls */
+        /* Move Action Buttons to TOP RIGHT to stop blocking controls */
         .action-bar {
           bottom: auto;
           top: 20px;
           right: 20px;
         }
 
-        /* 2. Make Control Panel wider but shorter */
+        /* Center and Shrink Panel */
         #ui-container {
           left: 50%;
-          transform: translateX(-50%); /* Center it */
+          transform: translateX(-50%);
           bottom: 20px;
           width: 90%;
-          max-height: 45vh; /* Less than half screen */
+          max-height: 40vh;
         }
-
-        /* Fix the slide-down animation for centered element */
         #ui-container.hidden {
-          transform: translate(-50%, 150%);
+          opacity: 0;
+          pointer-events: none;
         }
       }
     </style>
@@ -258,6 +283,8 @@
     </script>
   </head>
   <body>
+    <div id="studio-msg">Tap anywhere to exit Studio Mode</div>
+
     <button id="show-ui-btn" title="Open Controls">
       <svg
         width="24"
@@ -345,12 +372,11 @@
         <div class="label-row"><label>Animation</label></div>
         <button id="breatheBtn" class="action-btn">Start Breathing</button>
       </div>
-
       <div style="height: 10px"></div>
     </div>
 
     <div class="action-bar">
-      <button id="recordBtn" class="fab-btn">🎥 Loop</button>
+      <button id="studioBtn" class="fab-btn">👁️ Studio</button>
       <button id="saveBtn" class="fab-btn">📸 Snap</button>
     </div>
 
@@ -362,21 +388,18 @@
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
       // --- 1. AUDIO ---
-      let audioCtx, osc1, osc2, gainNode;
-      let isAudioInit = false;
-
+      let audioCtx,
+        osc1,
+        osc2,
+        gainNode,
+        isAudioInit = false;
       function initAudio() {
         if (isAudioInit) return;
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        const dest = audioCtx.createMediaStreamDestination();
-        window.audioStream = dest.stream;
-
         gainNode = audioCtx.createGain();
         gainNode.gain.value = 0;
         gainNode.connect(audioCtx.destination);
-        gainNode.connect(dest);
-
         osc1 = audioCtx.createOscillator();
         osc1.frequency.value = 110;
         osc1.connect(gainNode);
@@ -387,18 +410,15 @@
         osc2.start();
         isAudioInit = true;
       }
-
       function toggleAudio(isPlaying) {
         if (!isAudioInit) initAudio();
         if (audioCtx.state === "suspended") audioCtx.resume();
         const now = audioCtx.currentTime;
-        if (isPlaying) {
-          gainNode.gain.cancelScheduledValues(now);
-          gainNode.gain.linearRampToValueAtTime(0.05, now + 1);
-        } else {
-          gainNode.gain.cancelScheduledValues(now);
-          gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-        }
+        gainNode.gain.cancelScheduledValues(now);
+        gainNode.gain.linearRampToValueAtTime(
+          isPlaying ? 0.05 : 0,
+          now + (isPlaying ? 1 : 0.5)
+        );
       }
 
       // --- 2. ASSETS ---
@@ -579,7 +599,6 @@
           }
         }
       }
-
       function generatePetals() {
         petalGroup.clear();
         const count = parseInt(document.getElementById("petalCount").value);
@@ -636,12 +655,14 @@
       });
 
       const ui = document.getElementById("ui-container");
+      const openBtn = document.getElementById("show-ui-btn");
+      const actionbar = document.querySelector(".action-bar");
+      const studioMsg = document.getElementById("studio-msg");
+
       document
         .getElementById("hide-ui-btn")
         .addEventListener("click", () => ui.classList.add("hidden"));
-      document
-        .getElementById("show-ui-btn")
-        .addEventListener("click", () => ui.classList.remove("hidden"));
+      openBtn.addEventListener("click", () => ui.classList.remove("hidden"));
 
       document.getElementById("mutateBtn").addEventListener("click", () => {
         const rCount = Math.floor(Math.random() * 45) + 5;
@@ -693,85 +714,56 @@
         generatePetals();
       }
 
-      // --- RECORD BUTTON (Smart WhatsApp Logic) ---
-      const recordBtn = document.getElementById("recordBtn");
-      recordBtn.addEventListener("click", () => {
-        if (!window.MediaRecorder)
-          return alert("Browser does not support recording.");
+      // --- STUDIO MODE (The Clean Solution) ---
+      let studioMode = false;
+      document.getElementById("studioBtn").addEventListener("click", (e) => {
+        e.stopPropagation(); // Don't trigger window click
+        studioMode = true;
+        // Hide Everything
+        ui.classList.add("hidden");
+        actionbar.classList.add("hidden");
+        openBtn.classList.add("hidden");
+        // Show Message
+        studioMsg.style.opacity = "1";
+      });
 
-        // 1. Try to Force MP4 (Better for WhatsApp)
-        let mimeType = "video/webm";
-        let extension = "webm";
-
-        if (MediaRecorder.isTypeSupported("video/mp4")) {
-          mimeType = "video/mp4";
-          extension = "mp4";
-        } else if (MediaRecorder.isTypeSupported("video/webm; codecs=h264")) {
-          // Android Chrome often supports this
-          mimeType = "video/webm; codecs=h264";
-          extension = "mp4"; // Risky but works often on Android
+      // Exit Studio Mode on Tap
+      window.addEventListener("click", () => {
+        if (studioMode) {
+          studioMode = false;
+          ui.classList.remove("hidden");
+          actionbar.classList.remove("hidden");
+          openBtn.classList.remove("hidden");
+          studioMsg.style.opacity = "0";
         }
+      });
 
-        const canvas = renderer.domElement;
-        const stream = canvas.captureStream(30);
-        const combined = new MediaStream([...stream.getVideoTracks()]);
-        if (window.audioStream) {
-          const tracks = window.audioStream.getAudioTracks();
-          if (tracks.length > 0) combined.addTrack(tracks[0]);
-        }
+      // --- SMART SNAP (Desktop=Down, Mobile=Share) ---
+      document
+        .getElementById("saveBtn")
+        .addEventListener("click", async (e) => {
+          e.stopPropagation();
+          composer.render();
+          const dataURL = renderer.domElement.toDataURL("image/png");
+          const isMobile =
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+            window.innerWidth < 800;
 
-        const recorder = new MediaRecorder(combined, { mimeType });
-        const chunks = [];
-        recordBtn.innerText = "🔴 Rec";
-        recordBtn.style.background = "white";
-        recordBtn.style.color = "red";
-
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunks.push(e.data);
-        };
-        recorder.onstop = () => {
-          recordBtn.innerText = "🎥 Loop";
-          recordBtn.style.background = "#ff0066";
-          recordBtn.style.color = "white";
-          const blob = new Blob(chunks, { type: mimeType });
-
-          // IF WebM, warn user about WhatsApp
-          if (extension === "webm") {
-            alert(
-              "Tip: WhatsApp may not play WebM files perfectly. For best results on WhatsApp, use your phone's 'Screen Record' feature!"
-            );
+          if (isMobile && navigator.share) {
+            const blob = await (await fetch(dataURL)).blob();
+            const file = new File([blob], "waania-flower.png", {
+              type: "image/png",
+            });
+            try {
+              await navigator.share({ files: [file], title: "My Flower" });
+            } catch (e) {}
+          } else {
+            const link = document.createElement("a");
+            link.download = "waania-flower.png";
+            link.href = dataURL;
+            link.click();
           }
-
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `waania-loop.${extension}`;
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-        recorder.start();
-        setTimeout(() => recorder.stop(), 6000);
-      });
-
-      document.getElementById("saveBtn").addEventListener("click", async () => {
-        composer.render();
-        const dataURL = renderer.domElement.toDataURL("image/png");
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (isMobile && navigator.share) {
-          const blob = await (await fetch(dataURL)).blob();
-          const file = new File([blob], "waania-flower.png", {
-            type: "image/png",
-          });
-          try {
-            await navigator.share({ files: [file], title: "My Flower" });
-          } catch (e) {}
-        } else {
-          const link = document.createElement("a");
-          link.download = "waania-flower.png";
-          link.href = dataURL;
-          link.click();
-        }
-      });
+        });
 
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
