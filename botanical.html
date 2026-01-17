@@ -210,6 +210,24 @@
       </div>
 
       <div class="control-row">
+        <div class="label-row"><label>Life Mode</label></div>
+        <button
+          id="breatheBtn"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+          "
+        >
+          Start Breathing
+        </button>
+      </div>
+
+      <div class="control-row">
         <div class="label-row"><label>Petal Count</label></div>
         <div class="input-group">
           <input type="range" id="petalCount" min="3" max="50" value="12" />
@@ -292,30 +310,36 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
       const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
       pointLight.position.set(10, 10, 10);
       scene.add(pointLight);
 
-      // Controls
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      //controls.autoRotate = true;
-      //controls.autoRotateSpeed = 1.0;
+      controls.autoRotate = false;
+      controls.autoRotateSpeed = 1.0;
 
       // --- FLOWER ENGINE ---
       const flowerGroup = new THREE.Group();
-      flowerGroup.position.y = 2; // Center visual
+      flowerGroup.position.y = 2;
       scene.add(flowerGroup);
 
-      // Shared Geometries (Optimization)
-      const thornGeometry = new THREE.ConeGeometry(0.08, 0.4, 8);
-      thornGeometry.translate(0, 0.2, 0); // Pivot adjustment
+      // SEPARATE GROUPS (The Fix)
+      // stemGroup: Holds Stem, Thorns, Sepals (Static - Built Once)
+      // petalGroup: Holds the Rose Petals (Dynamic - Rebuilt Often)
+      const stemGroup = new THREE.Group();
+      const petalGroup = new THREE.Group();
+      flowerGroup.add(stemGroup);
+      flowerGroup.add(petalGroup);
 
+      // GEOMETRIES & MATERIALS
       const petalGeometry = new THREE.SphereGeometry(0.5, 32, 16);
-      petalGeometry.translate(0, 0.5, 0); // Pivot adjustment
+      petalGeometry.translate(0, 0.5, 0);
+
+      const thornGeometry = new THREE.ConeGeometry(0.08, 0.4, 8);
+      thornGeometry.translate(0, 0.2, 0);
 
       const stemPath = new THREE.CatmullRomCurve3([
         new THREE.Vector3(0, 0, 0),
@@ -334,95 +358,80 @@
         flatShading: true,
       });
 
-      function generateFlower() {
-        // Cleanup
-        flowerGroup.children.forEach((c) => {
-          if (c.geometry) c.geometry.dispose();
-        });
-        flowerGroup.clear();
+      // --- GENERATOR 1: THE STEM (Run Once) ---
+      function generateStem() {
+        stemGroup.clear(); // Clear only the stem parts
 
-        // 1. Get Values (From Sliders)
-        // Note: The sliders and number boxes are synced, so we can just read the slider
-        const count = parseInt(document.getElementById("petalCount").value);
-        const bloom = parseFloat(document.getElementById("bloomRadius").value);
-        const len = parseFloat(document.getElementById("petalLength").value);
-        const wid = parseFloat(document.getElementById("petalWidth").value);
-        const colorVal = document.getElementById("petalColor").value;
+        // 1. Main Tube
+        stemGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
 
-        // 2. Build Stem
-        flowerGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
+        // 2. Sepals (Green Stars)
+        for (let i = 0; i < 3; i++) {
+          const p = new THREE.Object3D();
+          p.rotation.z = (i / 5) * (Math.PI * 2);
+          const s = new THREE.Mesh(petalGeometry, stemMaterial);
+          s.scale.set(0.6, 4, 0.1);
+          s.rotation.x = -2.0;
+          s.position.y = -0.2;
+          p.add(s);
+          stemGroup.add(p);
+        }
 
-        // --- 2.5 ADD THORNS & LEAVES ---
-        // We will walk down the stem path and randomly place items
-        const stemLength = 20; // Number of steps down the stem
+        // 3. Thorns & Leaves (Random)
+        const stemLen = 20;
+        for (let i = 1; i < stemLen - 1; i++) {
+          const t = i / stemLen;
+          const point = stemPath.getPointAt(t);
+          const tangent = stemPath.getTangentAt(t);
 
-        for (let i = 1; i < stemLength - 1; i++) {
-          // "t" is a value from 0 (top) to 1 (bottom)
-          const t = i / stemLength;
-          const point = stemPath.getPointAt(t); // Get (x,y,z) on curve
-          const tangent = stemPath.getTangentAt(t); // Get direction of curve
-
-          // A. THORNS (Random chance: 20%)
+          // Thorns
           if (Math.random() < 0.2) {
             const thorn = new THREE.Mesh(thornGeometry, stemMaterial);
-
             thorn.position.copy(point);
-
-            // Math to make thorn point OUTWARD from stem
-            // We use a random rotation around the stem axis
             thorn.quaternion.setFromUnitVectors(
               new THREE.Vector3(0, 1, 0),
               tangent
             );
-            thorn.rotateX(Math.PI / 2); // Point out
-            thorn.rotateZ(Math.random() * Math.PI * 2); // Random direction
-
-            flowerGroup.add(thorn);
+            thorn.rotateX(Math.PI / 2);
+            thorn.rotateZ(Math.random() * Math.PI * 2);
+            stemGroup.add(thorn);
           }
 
-          // B. STEM LEAVES (Random chance: 15%)
-          // Don't put leaves too close to the flower head (t > 0.3)
+          // Leaves (Lower down)
           if (t > 0.3 && Math.random() < 0.15) {
             const leaf = new THREE.Mesh(petalGeometry, stemMaterial);
-
-            // Shape: Short, fat, and flat
             leaf.scale.set(0.5, 1.5, 0.05);
-
             leaf.position.copy(point);
-
-            // Orientation
             leaf.quaternion.setFromUnitVectors(
               new THREE.Vector3(0, 1, 0),
               tangent
             );
             leaf.rotateX(Math.PI / 2);
             leaf.rotateZ(Math.random() * Math.PI * 2);
-
-            flowerGroup.add(leaf);
+            stemGroup.add(leaf);
           }
         }
+      }
 
-        // 3. Build Sepals
-        for (let i = 0; i < 3; i++) {
-          const p = new THREE.Object3D();
-          p.rotation.z = (i / 5) * (Math.PI * 2);
-          const s = new THREE.Mesh(petalGeometry, stemMaterial);
-          s.scale.set(0.6 * wid, 4, 0.1); // Sepals don't stretch as much
-          s.rotation.x = -2.0;
-          s.position.y = -0.2;
-          p.add(s);
-          flowerGroup.add(p);
-        }
+      // --- GENERATOR 2: THE PETALS (Run Often) ---
+      function generatePetals() {
+        petalGroup.clear(); // Clear only the petals
 
-        // 4. Build Petals
+        // Get Values
+        const count = parseInt(document.getElementById("petalCount").value);
+        const bloom = parseFloat(document.getElementById("bloomRadius").value);
+        const len = parseFloat(document.getElementById("petalLength").value);
+        const wid = parseFloat(document.getElementById("petalWidth").value);
+        const colorVal = document.getElementById("petalColor").value;
+
         const rings = 4;
         for (let i = 0; i < count; i++) {
           for (let r = 0; r < rings; r++) {
             const pivot = new THREE.Object3D();
             const angle = (i / count) * (Math.PI * 2);
-            pivot.rotation.z = angle + r * 0.5; // Stagger
+            pivot.rotation.z = angle + r * 0.5;
 
-            // Color Logic
+            // Color
             const mat = baseMaterial.clone();
             const col = new THREE.Color(colorVal);
             const hsl = {};
@@ -432,65 +441,83 @@
             const petal = new THREE.Mesh(petalGeometry, mat);
             petal.rotation.x = bloom + r * 0.3;
 
-            // PARAMETRIC SCALING
+            // Parametric Shape
             const scale = 1 - r * 0.25;
             petal.scale.set(scale * wid, scale * len, scale * 0.1);
 
             pivot.add(petal);
-            flowerGroup.add(pivot);
+            petalGroup.add(pivot);
           }
         }
       }
 
-      // --- UI LOGIC (Syncing & Toggling) ---
-
-      // Helper to sync Slider <-> Number Box
+      // --- UI SYNC ---
       function bindInput(sliderId, numberId) {
         const slider = document.getElementById(sliderId);
         const number = document.getElementById(numberId);
-
-        // Slide -> Update Number & Regen
         slider.addEventListener("input", () => {
           number.value = slider.value;
-          generateFlower();
+          generatePetals();
         });
-
-        // Type Number -> Update Slider & Regen
         number.addEventListener("input", () => {
           slider.value = number.value;
-          generateFlower();
+          generatePetals();
         });
       }
-
-      // Bind all pairs
       bindInput("petalCount", "petalCountNum");
       bindInput("bloomRadius", "bloomRadiusNum");
       bindInput("petalLength", "petalLengthNum");
       bindInput("petalWidth", "petalWidthNum");
-
-      // Color needs no sync, just regen
       document
         .getElementById("petalColor")
-        .addEventListener("input", generateFlower);
+        .addEventListener("input", generatePetals);
 
-      // Hide/Show Logic
-      const uiPanel = document.getElementById("ui-container");
-      const hideBtn = document.getElementById("hide-ui-btn");
-      const showBtn = document.getElementById("show-ui-btn");
+      // Panel Toggle
+      document
+        .getElementById("hide-ui-btn")
+        .addEventListener("click", () =>
+          document.getElementById("ui-container").classList.add("hidden")
+        );
+      document
+        .getElementById("show-ui-btn")
+        .addEventListener("click", () =>
+          document.getElementById("ui-container").classList.remove("hidden")
+        );
 
-      hideBtn.addEventListener("click", () => {
-        uiPanel.classList.add("hidden"); // Slide out
-      });
+      // --- BREATHING LOGIC ---
+      let isBreathing = false;
+      let breatheTime = 0;
 
-      showBtn.addEventListener("click", () => {
-        uiPanel.classList.remove("hidden"); // Slide in
-      });
+      // Add Listener for Breathe Button
+      const breatheBtn = document.getElementById("breatheBtn");
+      if (breatheBtn) {
+        breatheBtn.addEventListener("click", () => {
+          isBreathing = !isBreathing;
+          breatheBtn.innerText = isBreathing
+            ? "Stop Breathing"
+            : "Start Breathing";
+          breatheBtn.style.background = isBreathing
+            ? "rgba(0, 255, 100, 0.2)"
+            : "rgba(255,255,255,0.1)";
+        });
+      }
 
-      // --- SNAPSHOT LOGIC ---
+      function updateBreathing() {
+        if (!isBreathing) return;
+        breatheTime += 0.02;
+        // Map sine wave to 0.2 -> 0.8 range
+        const val = 0.5 + Math.sin(breatheTime) * 0.3;
+
+        // Update UI and Engine
+        document.getElementById("bloomRadius").value = val;
+        document.getElementById("bloomRadiusNum").value = val.toFixed(2);
+        generatePetals(); // Only rebuilds petals, not thorns!
+      }
+
+      // --- SNAPSHOT ---
       document.getElementById("saveBtn").addEventListener("click", async () => {
         renderer.render(scene, camera);
         const dataURL = renderer.domElement.toDataURL("image/png");
-
         if (navigator.share) {
           const blob = await (await fetch(dataURL)).blob();
           const file = new File([blob], "waania-rose.png", {
@@ -507,10 +534,13 @@
         }
       });
 
-      // Init
-      generateFlower();
+      // --- INIT & ANIMATE ---
+      generateStem(); // Run once (Thorns are now locked in)
+      generatePetals(); // Run first time
+
       function animate() {
         requestAnimationFrame(animate);
+        updateBreathing();
         controls.update();
         renderer.render(scene, camera);
       }
