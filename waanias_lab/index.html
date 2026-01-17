@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Waania's Botanical Lab</title>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body class="bg-space">
+    <div id="studio-msg">Tap anywhere to exit Studio Mode</div>
+
+    <button id="show-ui-btn" title="Open Controls">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="4" y1="21" x2="4" y2="14"></line>
+        <line x1="4" y1="10" x2="4" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="3"></line>
+        <line x1="20" y1="21" x2="20" y2="16"></line>
+        <line x1="20" y1="12" x2="20" y2="3"></line>
+        <line x1="1" y1="14" x2="7" y2="14"></line>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="17" y1="16" x2="23" y2="16"></line>
+      </svg>
+    </button>
+
+    <div id="ui-container">
+      <div class="header">
+        <h1>Botanical Lab</h1>
+        <button class="close-btn" id="hide-ui-btn">✕</button>
+      </div>
+      <div class="scroll-content">
+        <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
+
+        <div class="control-row">
+          <div class="label-row"><label>Environment</label></div>
+          <select id="bgSelect">
+            <option value="space" selected>Deep Space</option>
+            <option value="sunset">Golden Hour</option>
+            <option value="forest">Misty Garden</option>
+            <option value="midnight">Midnight</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <div class="label-row"><label>Petal Count</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalCount"
+              min="3"
+              max="50"
+              value="12"
+            /><input type="number" id="petalCountNum" value="12" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Bloom Stage</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="bloomRadius"
+              min="0"
+              max="1.5"
+              step="0.1"
+              value="0.5"
+            /><input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Petal Length</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalLength"
+              min="1"
+              max="8"
+              step="0.1"
+              value="4"
+            /><input type="number" id="petalLengthNum" value="4" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Petal Width</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalWidth"
+              min="0.1"
+              max="2"
+              step="0.1"
+              value="1"
+            /><input type="number" id="petalWidthNum" value="1" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Pigment</label></div>
+          <input type="color" id="petalColor" value="#ff0066" />
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Animation</label></div>
+          <button id="breatheBtn" class="action-btn">Start Breathing</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button id="studioBtn" class="fab-btn">👁️ Studio</button>
+      <button id="saveBtn" class="fab-btn">📸 Snap</button>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
