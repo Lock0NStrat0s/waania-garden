@@ -19,16 +19,14 @@
         display: block;
       }
 
-      /* --- UI CONTAINER (Control Panel) --- */
+      /* --- UI CONTAINER (The Shell) --- */
       #ui-container {
         position: absolute;
         bottom: 20px;
         left: 20px;
         width: 300px;
-        /* Mobile Safety: Never block full screen */
         max-width: 90%;
         max-height: 50vh;
-        overflow-y: auto;
 
         background: rgba(20, 20, 35, 0.85);
         backdrop-filter: blur(12px);
@@ -36,10 +34,10 @@
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        padding: 20px;
+
+        /* Layout: Header is fixed, content scrolls */
         display: flex;
         flex-direction: column;
-        gap: 16px;
         z-index: 20;
         transition: opacity 0.3s;
       }
@@ -48,23 +46,14 @@
         pointer-events: none;
       }
 
-      /* Scrollbar Styling */
-      #ui-container::-webkit-scrollbar {
-        width: 4px;
-      }
-      #ui-container::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-      }
-
-      /* --- HEADER --- */
+      /* --- HEADER (Fixed at top) --- */
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding-bottom: 10px;
-        margin-bottom: 5px;
+        padding: 20px 20px 10px 20px; /* Internal padding */
+        flex-shrink: 0; /* Never shrink */
       }
       h1 {
         margin: 0;
@@ -80,7 +69,24 @@
         color: rgba(255, 255, 255, 0.5);
         font-size: 1.2rem;
         cursor: pointer;
-        padding: 10px;
+        padding: 5px;
+      }
+
+      /* --- SCROLLABLE CONTENT --- */
+      .scroll-content {
+        overflow-y: auto;
+        padding: 15px 20px 20px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      /* Custom Scrollbar */
+      .scroll-content::-webkit-scrollbar {
+        width: 4px;
+      }
+      .scroll-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
       }
 
       /* --- OPEN BUTTON --- */
@@ -195,7 +201,7 @@
       .action-bar {
         position: absolute;
         bottom: 25px;
-        right: 25px; /* Desktop Position */
+        right: 25px;
         display: flex;
         gap: 15px;
         z-index: 100;
@@ -238,33 +244,31 @@
         top: 20%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.8);
         font-weight: 600;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px 20px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 12px 24px;
         border-radius: 30px;
         pointer-events: none;
         opacity: 0;
-        transition: opacity 0.5s;
+        transition: opacity 1s ease-out;
         text-align: center;
+        width: max-content;
       }
 
-      /* --- MOBILE LAYOUT FIXES --- */
+      /* --- MOBILE LAYOUT --- */
       @media (max-width: 600px) {
-        /* Move Action Buttons to TOP RIGHT to stop blocking controls */
         .action-bar {
           bottom: auto;
           top: 20px;
           right: 20px;
         }
-
-        /* Center and Shrink Panel */
         #ui-container {
           left: 50%;
           transform: translateX(-50%);
           bottom: 20px;
           width: 90%;
-          max-height: 40vh;
+          max-height: 45vh;
         }
         #ui-container.hidden {
           opacity: 0;
@@ -311,68 +315,70 @@
         <h1>Botanical Lab</h1>
         <button class="close-btn" id="hide-ui-btn">✕</button>
       </div>
-      <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
 
-      <div class="control-row">
-        <div class="label-row"><label>Petal Count</label></div>
-        <div class="input-group">
-          <input
-            type="range"
-            id="petalCount"
-            min="3"
-            max="50"
-            value="12"
-          /><input type="number" id="petalCountNum" value="12" />
+      <div class="scroll-content">
+        <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
+
+        <div class="control-row">
+          <div class="label-row"><label>Petal Count</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalCount"
+              min="3"
+              max="50"
+              value="12"
+            /><input type="number" id="petalCountNum" value="12" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Bloom Stage</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="bloomRadius"
+              min="0"
+              max="1.5"
+              step="0.1"
+              value="0.5"
+            /><input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Petal Length</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalLength"
+              min="1"
+              max="8"
+              step="0.1"
+              value="4"
+            /><input type="number" id="petalLengthNum" value="4" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Petal Width</label></div>
+          <div class="input-group">
+            <input
+              type="range"
+              id="petalWidth"
+              min="0.1"
+              max="2"
+              step="0.1"
+              value="1"
+            /><input type="number" id="petalWidthNum" value="1" step="0.1" />
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Pigment</label></div>
+          <input type="color" id="petalColor" value="#ff0066" />
+        </div>
+        <div class="control-row">
+          <div class="label-row"><label>Animation</label></div>
+          <button id="breatheBtn" class="action-btn">Start Breathing</button>
         </div>
       </div>
-      <div class="control-row">
-        <div class="label-row"><label>Bloom Stage</label></div>
-        <div class="input-group">
-          <input
-            type="range"
-            id="bloomRadius"
-            min="0"
-            max="1.5"
-            step="0.1"
-            value="0.5"
-          /><input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
-        </div>
-      </div>
-      <div class="control-row">
-        <div class="label-row"><label>Petal Length</label></div>
-        <div class="input-group">
-          <input
-            type="range"
-            id="petalLength"
-            min="1"
-            max="8"
-            step="0.1"
-            value="4"
-          /><input type="number" id="petalLengthNum" value="4" step="0.1" />
-        </div>
-      </div>
-      <div class="control-row">
-        <div class="label-row"><label>Petal Width</label></div>
-        <div class="input-group">
-          <input
-            type="range"
-            id="petalWidth"
-            min="0.1"
-            max="2"
-            step="0.1"
-            value="1"
-          /><input type="number" id="petalWidthNum" value="1" step="0.1" />
-        </div>
-      </div>
-      <div class="control-row">
-        <div class="label-row"><label>Pigment</label></div>
-        <input type="color" id="petalColor" value="#ff0066" />
-      </div>
-      <div class="control-row">
-        <div class="label-row"><label>Animation</label></div>
-        <button id="breatheBtn" class="action-btn">Start Breathing</button>
-      </div>
-      <div style="height: 10px"></div>
     </div>
 
     <div class="action-bar">
@@ -714,21 +720,20 @@
         generatePetals();
       }
 
-      // --- STUDIO MODE (The Clean Solution) ---
+      // --- STUDIO MODE ---
       let studioMode = false;
       document.getElementById("studioBtn").addEventListener("click", (e) => {
-        e.stopPropagation(); // Don't trigger window click
+        e.stopPropagation();
         studioMode = true;
-        // Hide Everything
         ui.classList.add("hidden");
         actionbar.classList.add("hidden");
         openBtn.classList.add("hidden");
-        // Show Message
+        // Show Msg then fade
         studioMsg.style.opacity = "1";
+        setTimeout(() => (studioMsg.style.opacity = "0"), 3000); // Fade out after 3s
       });
 
-      // Exit Studio Mode on Tap
-      window.addEventListener("click", () => {
+      function exitStudio() {
         if (studioMode) {
           studioMode = false;
           ui.classList.remove("hidden");
@@ -736,9 +741,12 @@
           openBtn.classList.remove("hidden");
           studioMsg.style.opacity = "0";
         }
-      });
+      }
+      // Listener for both click and touch to ensure mobile exit works
+      window.addEventListener("click", exitStudio);
+      window.addEventListener("touchstart", exitStudio);
 
-      // --- SMART SNAP (Desktop=Down, Mobile=Share) ---
+      // --- SNAP BUTTON ---
       document
         .getElementById("saveBtn")
         .addEventListener("click", async (e) => {
