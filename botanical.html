@@ -11,7 +11,7 @@
       body {
         margin: 0;
         overflow: hidden;
-        background: #1a1a2e;
+        background: #111; /* Will be overwritten by JS scene.background */
       }
       canvas {
         display: block;
@@ -20,21 +20,63 @@
         position: absolute;
         bottom: 20px;
         left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.8);
-        padding: 15px;
-        border-radius: 10px;
+        transform: translateX(-50%); /* Centers the box */
+
+        background: rgba(26, 26, 46, 0.95); /* Semi-transparent dark blue */
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Nice depth shadow */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+
         color: white;
-        font-family: sans-serif;
+        font-family: system-ui, -apple-system, sans-serif;
+
+        /* THE LAYOUT FIX */
         display: flex;
-        flex-direction: column; /* Stack sliders vertically */
-        gap: 10px;
-        min-width: 200px;
+        flex-direction: column; /* Stack items top-to-bottom */
+        gap: 15px; /* Space between every item */
+        min-width: 250px;
       }
+
       label {
         display: flex;
         justify-content: space-between;
         font-size: 0.9rem;
+        font-weight: 500;
+        color: #ccc;
+      }
+
+      /* Style the Sliders */
+      input[type="range"] {
+        width: 100%;
+        cursor: pointer;
+      }
+
+      /* Style the Color Picker */
+      input[type="color"] {
+        width: 100%;
+        height: 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background: none;
+      }
+
+      /* Style the Snap Button */
+      button {
+        background: linear-gradient(135deg, #ff0066, #ff5599);
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.1s;
+        margin-top: 5px;
+      }
+      button:active {
+        transform: scale(0.96);
       }
     </style>
     <script type="importmap">
@@ -62,6 +104,8 @@
 
       <label>Color</label>
       <input type="color" id="petalColor" value="#ff0066" />
+
+      <button id="saveBtn">📸 Snap</button>
     </div>
 
     <script type="module">
@@ -89,7 +133,16 @@
       pointLight.position.set(5, 5, 5);
       scene.add(pointLight);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      // Add preserveDrawingBuffer if you ever see blank images (optional but safe)
+      // But CRUCIALLY, we need to set the scene background color in JS, not just CSS
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+
+      // Tell Three.js the background is Dark Blue (matches your CSS)
+      scene.background = new THREE.Color(0x1a1a2e);
+
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
@@ -231,6 +284,20 @@
       document
         .getElementById("petalColor")
         .addEventListener("input", generateFlower);
+
+      document.getElementById("saveBtn").addEventListener("click", () => {
+        // 1. Force a render right now (so the buffer isn't empty)
+        renderer.render(scene, camera);
+
+        // 2. Convert the Canvas pixels to a PNG data URL
+        const imgData = renderer.domElement.toDataURL("image/png");
+
+        // 3. Create a fake link to trigger the download
+        const link = document.createElement("a");
+        link.download = "waania-rose.png";
+        link.href = imgData;
+        link.click(); // Simulate a click
+      });
     </script>
   </body>
 </html>
