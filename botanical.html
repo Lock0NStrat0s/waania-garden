@@ -8,25 +8,25 @@
     />
     <title>Waania's Botanical Lab</title>
     <style>
-      /* --- 1. BASE STYLES --- */
+      /* --- BASE STYLES --- */
       body {
         margin: 0;
         overflow: hidden;
-        background: #111; /* Fallback */
+        background: #050510;
         font-family: system-ui, -apple-system, sans-serif;
       }
       canvas {
         display: block;
       }
 
-      /* --- 2. GLASS UI PANEL --- */
+      /* --- UI CONTAINER --- */
       #ui-container {
         position: absolute;
         bottom: 20px;
         left: 20px;
         width: 300px;
         max-width: 85%;
-        background: rgba(20, 20, 35, 0.85); /* Deep Blue Glass */
+        background: rgba(20, 20, 35, 0.85);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-radius: 20px;
@@ -39,22 +39,20 @@
         gap: 16px;
         z-index: 10;
       }
-
-      /* Hidden State (Slide down) */
       #ui-container.hidden {
         transform: translateY(150%);
         opacity: 0;
         pointer-events: none;
       }
 
-      /* --- 3. TYPOGRAPHY & HEADER --- */
+      /* --- HEADER --- */
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding-bottom: 10px;
+        margin-bottom: 5px;
       }
       h1 {
         margin: 0;
@@ -70,14 +68,9 @@
         color: rgba(255, 255, 255, 0.5);
         font-size: 1.2rem;
         cursor: pointer;
-        padding: 5px;
-        transition: color 0.2s;
-      }
-      .close-btn:hover {
-        color: white;
       }
 
-      /* --- 4. SHOW BUTTON (Floating Icon) --- */
+      /* --- CONTROLS --- */
       #show-ui-btn {
         position: absolute;
         bottom: 25px;
@@ -100,7 +93,6 @@
         transform: scale(0.9);
       }
 
-      /* --- 5. INPUTS & CONTROLS --- */
       .control-row {
         display: flex;
         flex-direction: column;
@@ -109,7 +101,6 @@
       .label-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
         font-size: 0.8rem;
         color: #aaa;
         font-weight: 500;
@@ -120,7 +111,6 @@
         gap: 12px;
       }
 
-      /* Custom Range Slider */
       input[type="range"] {
         flex-grow: 1;
         height: 6px;
@@ -135,15 +125,9 @@
         height: 16px;
         background: #ff0066;
         border-radius: 50%;
+        margin-top: -5px;
         box-shadow: 0 0 10px rgba(255, 0, 102, 0.5);
-        margin-top: -5px; /* Alignment fix */
       }
-      input[type="range"]::-webkit-slider-runnable-track {
-        height: 6px;
-        border-radius: 10px;
-      }
-
-      /* Number Box */
       input[type="number"] {
         width: 45px;
         background: rgba(0, 0, 0, 0.4);
@@ -151,15 +135,8 @@
         border-radius: 6px;
         color: white;
         padding: 6px;
-        font-size: 0.85rem;
         text-align: center;
-        font-family: monospace;
       }
-      input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-      }
-
-      /* Color Picker */
       input[type="color"] {
         width: 100%;
         height: 40px;
@@ -169,19 +146,15 @@
         background: none;
       }
 
-      /* --- 6. ACTION BUTTONS --- */
       .action-btn {
         width: 100%;
         padding: 12px;
         border-radius: 8px;
         font-weight: 600;
-        font-size: 0.9rem;
         cursor: pointer;
         border: none;
         transition: all 0.2s;
       }
-
-      /* Mutate Button */
       #mutateBtn {
         background: linear-gradient(
           135deg,
@@ -198,7 +171,6 @@
         box-shadow: 0 0 20px rgba(255, 0, 102, 0.4);
       }
 
-      /* Breathe Button */
       #breatheBtn {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -210,7 +182,6 @@
         color: #00ff80;
       }
 
-      /* Snap Button (Bottom Right) */
       #saveBtn {
         position: absolute;
         bottom: 25px;
@@ -225,13 +196,10 @@
         cursor: pointer;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         z-index: 100;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s;
       }
       #saveBtn:active {
         transform: scale(0.95);
-      }
-      #saveBtn:hover {
-        box-shadow: 0 6px 25px rgba(255, 255, 255, 0.4);
       }
     </style>
 
@@ -271,17 +239,20 @@
         <h1>Botanical Lab</h1>
         <button class="close-btn" id="hide-ui-btn">✕</button>
       </div>
-
       <button id="mutateBtn" class="action-btn">🎲 Mutate DNA</button>
 
       <div class="control-row">
         <div class="label-row"><label>Petal Count</label></div>
         <div class="input-group">
-          <input type="range" id="petalCount" min="3" max="50" value="12" />
-          <input type="number" id="petalCountNum" value="12" min="3" max="50" />
+          <input
+            type="range"
+            id="petalCount"
+            min="3"
+            max="50"
+            value="12"
+          /><input type="number" id="petalCountNum" value="12" />
         </div>
       </div>
-
       <div class="control-row">
         <div class="label-row"><label>Bloom Stage</label></div>
         <div class="input-group">
@@ -292,11 +263,9 @@
             max="1.5"
             step="0.1"
             value="0.5"
-          />
-          <input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
+          /><input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
         </div>
       </div>
-
       <div class="control-row">
         <div class="label-row"><label>Petal Length</label></div>
         <div class="input-group">
@@ -307,11 +276,9 @@
             max="8"
             step="0.1"
             value="4"
-          />
-          <input type="number" id="petalLengthNum" value="4" step="0.1" />
+          /><input type="number" id="petalLengthNum" value="4" step="0.1" />
         </div>
       </div>
-
       <div class="control-row">
         <div class="label-row"><label>Petal Width</label></div>
         <div class="input-group">
@@ -322,22 +289,18 @@
             max="2"
             step="0.1"
             value="1"
-          />
-          <input type="number" id="petalWidthNum" value="1" step="0.1" />
+          /><input type="number" id="petalWidthNum" value="1" step="0.1" />
         </div>
       </div>
-
       <div class="control-row">
         <div class="label-row"><label>Pigment</label></div>
         <input type="color" id="petalColor" value="#ff0066" />
       </div>
-
       <div class="control-row">
         <div class="label-row"><label>Animation</label></div>
         <button id="breatheBtn" class="action-btn">Start Breathing</button>
       </div>
     </div>
-
     <button id="saveBtn">📸 Snap</button>
 
     <script type="module">
@@ -347,22 +310,65 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
-      // --- 1. ASSET GENERATORS ---
+      // --- 1. PROCEDURAL AUDIO ENGINE ---
+      let audioCtx, osc1, osc2, gainNode;
+      let isAudioInit = false;
 
+      function initAudio() {
+        if (isAudioInit) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        // Master Volume
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0; // Start silent
+        gainNode.connect(audioCtx.destination);
+
+        // Oscillator 1 (Base Drone)
+        osc1 = audioCtx.createOscillator();
+        osc1.type = "sine";
+        osc1.frequency.value = 110; // A2 (Low hum)
+        osc1.connect(gainNode);
+        osc1.start();
+
+        // Oscillator 2 (Binaural Detune)
+        osc2 = audioCtx.createOscillator();
+        osc2.type = "sine";
+        osc2.frequency.value = 112; // 2Hz beat difference
+        osc2.connect(gainNode);
+        osc2.start();
+
+        isAudioInit = true;
+      }
+
+      function toggleAudio(isPlaying) {
+        if (!isAudioInit) initAudio();
+        // Resume context if browser suspended it
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        // Smooth fade in/out
+        const now = audioCtx.currentTime;
+        if (isPlaying) {
+          gainNode.gain.cancelScheduledValues(now);
+          gainNode.gain.linearRampToValueAtTime(0.05, now + 1); // Fade to 5% volume
+        } else {
+          gainNode.gain.cancelScheduledValues(now);
+          gainNode.gain.linearRampToValueAtTime(0, now + 0.5); // Fade to silence
+        }
+      }
+
+      // --- 2. ASSET GENERATORS ---
       function createVeinTexture() {
         const size = 512;
         const canvas = document.createElement("canvas");
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext("2d");
-
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, size, size);
-
         ctx.strokeStyle = "#999999";
         ctx.lineWidth = 2;
         ctx.globalAlpha = 0.3;
-
         for (let i = 0; i < 40; i++) {
           const startX = Math.random() * size;
           ctx.beginPath();
@@ -383,9 +389,8 @@
       function createParticles() {
         const count = 300;
         const geometry = new THREE.BufferGeometry();
-        const positions = [];
-        const velocities = [];
-
+        const positions = [],
+          velocities = [];
         for (let i = 0; i < count; i++) {
           positions.push(
             (Math.random() - 0.5) * 25,
@@ -403,21 +408,21 @@
           new THREE.Float32BufferAttribute(positions, 3)
         );
         geometry.userData = { velocities: velocities };
-
-        const material = new THREE.PointsMaterial({
-          color: 0xffffff,
-          size: 0.15,
-          transparent: true,
-          opacity: 0.8, // Increased opacity for Bloom
-          sizeAttenuation: true,
-        });
-        return new THREE.Points(geometry, material);
+        return new THREE.Points(
+          geometry,
+          new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.15,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true,
+          })
+        );
       }
 
-      // --- 2. SCENE SETUP ---
+      // --- 3. SCENE SETUP ---
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x050510); // Darker blue for contrast
-
+      scene.background = new THREE.Color(0x050510);
       const camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
@@ -425,72 +430,57 @@
         1000
       );
       camera.position.set(0, 5, 15);
-
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
         preserveDrawingBuffer: true,
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio); // Sharpness
-      renderer.toneMapping = THREE.ReinhardToneMapping; // Better light handling
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.toneMapping = THREE.ReinhardToneMapping;
       document.body.appendChild(renderer.domElement);
 
-      // --- POST PROCESSING (THE GLOW) ---
-      const renderScene = new RenderPass(scene, camera);
-
-      // Resolution, Strength, Radius, Threshold
+      // POST PROCESSING
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
       const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
         1.5,
         0.4,
         0.85
       );
-      bloomPass.strength = 0.5; // Intensity of glow
-      bloomPass.radius = 0.5; // Spread of glow
-      bloomPass.threshold = 0.1; // Only bright things glow
-
-      const composer = new EffectComposer(renderer);
-      composer.addPass(renderScene);
+      bloomPass.strength = 0.5;
+      bloomPass.radius = 0.5;
+      bloomPass.threshold = 0.1;
       composer.addPass(bloomPass);
 
       // LIGHTING
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Dim ambient
-      scene.add(ambientLight);
-
+      scene.add(new THREE.AmbientLight(0xffffff, 0.2));
       const pointLight = new THREE.PointLight(0xffffff, 1.2, 100);
       pointLight.position.set(10, 10, 10);
       scene.add(pointLight);
-
-      const backLight = new THREE.PointLight(0xff0066, 1.0, 100); // Brighter backlight
+      const backLight = new THREE.PointLight(0xff0066, 1.0, 100);
       backLight.position.set(-10, 5, -10);
       scene.add(backLight);
 
-      // CONTROLS
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
       controls.autoRotate = false;
 
-      // --- 3. OBJECT SETUP ---
+      // --- 4. OBJECTS ---
       const flowerGroup = new THREE.Group();
       flowerGroup.position.y = 2;
       scene.add(flowerGroup);
-
       const particles = createParticles();
       scene.add(particles);
-
       const stemGroup = new THREE.Group();
       const petalGroup = new THREE.Group();
       flowerGroup.add(stemGroup);
       flowerGroup.add(petalGroup);
 
-      // --- 4. GEOMETRY & MATERIALS ---
       const petalGeometry = new THREE.SphereGeometry(0.5, 32, 16);
       petalGeometry.translate(0, 0.5, 0);
-
       const thornGeometry = new THREE.ConeGeometry(0.08, 0.4, 8);
       thornGeometry.translate(0, 0.2, 0);
-
       const stemPath = new THREE.CatmullRomCurve3([
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0.5, -4, 0),
@@ -499,28 +489,24 @@
       const stemGeometry = new THREE.TubeGeometry(stemPath, 20, 0.15, 8, false);
 
       const veinTexture = createVeinTexture();
-
       const baseMaterial = new THREE.MeshPhongMaterial({
         shininess: 30,
         side: THREE.DoubleSide,
         map: veinTexture,
         bumpMap: veinTexture,
         bumpScale: 0.05,
-        emissive: 0x000000, // Important for bloom control
+        emissive: 0x000000,
         specular: 0x222222,
       });
-
       const stemMaterial = new THREE.MeshPhongMaterial({
         color: 0x339933,
         shininess: 5,
         flatShading: true,
       });
 
-      // --- 5. GENERATORS ---
       function generateStem() {
         stemGroup.clear();
         stemGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
-
         for (let i = 0; i < 3; i++) {
           const p = new THREE.Object3D();
           p.rotation.z = (i / 3) * (Math.PI * 2);
@@ -531,35 +517,26 @@
           p.add(s);
           stemGroup.add(p);
         }
-
-        const stemLen = 20;
-        for (let i = 1; i < stemLen - 1; i++) {
-          const t = i / stemLen;
-          const point = stemPath.getPointAt(t);
-          const tangent = stemPath.getTangentAt(t);
-
+        for (let i = 1; i < 20 - 1; i++) {
+          const t = i / 20;
+          const pt = stemPath.getPointAt(t);
+          const tan = stemPath.getTangentAt(t);
           if (Math.random() < 0.2) {
-            const thorn = new THREE.Mesh(thornGeometry, stemMaterial);
-            thorn.position.copy(point);
-            thorn.quaternion.setFromUnitVectors(
-              new THREE.Vector3(0, 1, 0),
-              tangent
-            );
-            thorn.rotateX(Math.PI / 2);
-            thorn.rotateZ(Math.random() * Math.PI * 2);
-            stemGroup.add(thorn);
+            const th = new THREE.Mesh(thornGeometry, stemMaterial);
+            th.position.copy(pt);
+            th.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+            th.rotateX(Math.PI / 2);
+            th.rotateZ(Math.random() * Math.PI * 2);
+            stemGroup.add(th);
           }
           if (t > 0.3 && Math.random() < 0.15) {
-            const leaf = new THREE.Mesh(petalGeometry, stemMaterial);
-            leaf.scale.set(0.5, 1.5, 0.05);
-            leaf.position.copy(point);
-            leaf.quaternion.setFromUnitVectors(
-              new THREE.Vector3(0, 1, 0),
-              tangent
-            );
-            leaf.rotateX(Math.PI / 2);
-            leaf.rotateZ(Math.random() * Math.PI * 2);
-            stemGroup.add(leaf);
+            const lf = new THREE.Mesh(petalGeometry, stemMaterial);
+            lf.scale.set(0.5, 1.5, 0.05);
+            lf.position.copy(pt);
+            lf.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+            lf.rotateX(Math.PI / 2);
+            lf.rotateZ(Math.random() * Math.PI * 2);
+            stemGroup.add(lf);
           }
         }
       }
@@ -572,55 +549,42 @@
         const wid = parseFloat(document.getElementById("petalWidth").value);
         const colorVal = document.getElementById("petalColor").value;
 
-        const rings = 4;
         for (let i = 0; i < count; i++) {
-          for (let r = 0; r < rings; r++) {
+          for (let r = 0; r < 4; r++) {
             const pivot = new THREE.Object3D();
-            const angle = (i / count) * (Math.PI * 2);
-            pivot.rotation.z = angle + r * 0.5;
-
+            pivot.rotation.z = (i / count) * (Math.PI * 2) + r * 0.5;
             const mat = baseMaterial.clone();
             const col = new THREE.Color(colorVal);
             const hsl = {};
             col.getHSL(hsl);
             mat.color.setHSL(hsl.h, hsl.s, hsl.l + (r * 0.1 - 0.1));
-
-            // Subtle Emissive glow for outer petals
             if (r < 2) mat.emissive.setHSL(hsl.h, hsl.s, hsl.l * 0.1);
-
             const petal = new THREE.Mesh(petalGeometry, mat);
             petal.rotation.x = bloom + r * 0.3;
             const scale = 1 - r * 0.25;
             petal.scale.set(scale * wid, scale * len, scale * 0.1);
-
             pivot.add(petal);
             petalGroup.add(pivot);
           }
         }
       }
 
-      // --- 6. HELPERS & EVENTS ---
-
-      // FIXED: Helper function for safe updates
-      function updateInput(sliderId, numberId, val) {
-        const slider = document.getElementById(sliderId);
-        const num = document.getElementById(numberId);
-        if (slider && num) {
-          slider.value = val;
-          num.value = val;
-        }
+      // --- 5. LOGIC & EVENTS ---
+      function updateInput(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
       }
 
-      function bindInput(sliderId, numberId) {
-        const slider = document.getElementById(sliderId);
-        const number = document.getElementById(numberId);
-        slider.addEventListener("input", () => {
-          number.value = slider.value;
+      function bindInput(sliderId, numId) {
+        const s = document.getElementById(sliderId),
+          n = document.getElementById(numId);
+        s.addEventListener("input", () => {
+          n.value = s.value;
           generatePetals();
           saveState();
         });
-        number.addEventListener("input", () => {
-          slider.value = number.value;
+        n.addEventListener("input", () => {
+          s.value = n.value;
           generatePetals();
           saveState();
         });
@@ -644,28 +608,36 @@
 
       document.getElementById("mutateBtn").addEventListener("click", () => {
         const rCount = Math.floor(Math.random() * 45) + 5;
-        const rBloom = (Math.random() * 1.5).toFixed(1);
-        const rLength = (Math.random() * 5 + 2).toFixed(1);
-        const rWidth = (Math.random() * 1.9 + 0.1).toFixed(1);
         const rColor = new THREE.Color().setHSL(
           Math.random(),
           0.5 + Math.random() * 0.5,
           0.4 + Math.random() * 0.2
         );
-
-        updateInput("petalCount", "petalCountNum", rCount);
-        updateInput("bloomRadius", "bloomRadiusNum", rBloom);
-        updateInput("petalLength", "petalLengthNum", rLength);
-        updateInput("petalWidth", "petalWidthNum", rWidth);
+        updateInput("petalCount", rCount);
+        updateInput("petalCountNum", rCount);
+        updateInput("bloomRadius", (Math.random() * 1.5).toFixed(1));
+        updateInput(
+          "bloomRadiusNum",
+          document.getElementById("bloomRadius").value
+        );
+        updateInput("petalLength", (Math.random() * 5 + 2).toFixed(1));
+        updateInput(
+          "petalLengthNum",
+          document.getElementById("petalLength").value
+        );
+        updateInput("petalWidth", (Math.random() * 1.9 + 0.1).toFixed(1));
+        updateInput(
+          "petalWidthNum",
+          document.getElementById("petalWidth").value
+        );
         document.getElementById("petalColor").value =
           "#" + rColor.getHexString();
-
         generatePetals();
         saveState();
       });
 
-      let isBreathing = false;
-      let breatheTime = 0;
+      let isBreathing = false,
+        breatheTime = 0;
       const breatheBtn = document.getElementById("breatheBtn");
       breatheBtn.addEventListener("click", () => {
         isBreathing = !isBreathing;
@@ -673,6 +645,7 @@
         breatheBtn.innerText = isBreathing
           ? "Stop Breathing"
           : "Start Breathing";
+        toggleAudio(isBreathing); // TRIGGER AUDIO
       });
 
       function updateBreathing() {
@@ -685,7 +658,6 @@
       }
 
       document.getElementById("saveBtn").addEventListener("click", async () => {
-        // Render one frame cleanly without UI if needed
         composer.render();
         const dataURL = renderer.domElement.toDataURL("image/png");
         if (navigator.share) {
@@ -708,10 +680,9 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight); // Update Bloom size
+        composer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      // --- MEMORY SYSTEM ---
       function saveState() {
         const state = {
           count: document.getElementById("petalCount").value,
@@ -722,15 +693,17 @@
         };
         localStorage.setItem("waania-flower-state", JSON.stringify(state));
       }
-
       function loadState() {
-        const saved = localStorage.getItem("waania-flower-state");
-        if (saved) {
-          const state = JSON.parse(saved);
-          updateInput("petalCount", "petalCountNum", state.count);
-          updateInput("bloomRadius", "bloomRadiusNum", state.bloom);
-          updateInput("petalLength", "petalLengthNum", state.length);
-          updateInput("petalWidth", "petalWidthNum", state.width);
+        const state = JSON.parse(localStorage.getItem("waania-flower-state"));
+        if (state) {
+          updateInput("petalCount", state.count);
+          updateInput("petalCountNum", state.count);
+          updateInput("bloomRadius", state.bloom);
+          updateInput("bloomRadiusNum", state.bloom);
+          updateInput("petalLength", state.length);
+          updateInput("petalLengthNum", state.length);
+          updateInput("petalWidth", state.width);
+          updateInput("petalWidthNum", state.width);
           document.getElementById("petalColor").value = state.color;
           generatePetals();
         }
@@ -738,37 +711,28 @@
 
       // --- INIT & ANIMATE ---
       generateStem();
-      if (localStorage.getItem("waania-flower-state")) {
-        loadState();
-      } else {
-        generatePetals();
-      }
+      localStorage.getItem("waania-flower-state")
+        ? loadState()
+        : generatePetals();
 
       function animate() {
         requestAnimationFrame(animate);
         updateBreathing();
         controls.update();
-
-        const positions = particles.geometry.attributes.position.array;
-        const vels = particles.geometry.userData.velocities;
-        const range = 15;
-
-        for (let i = 0; i < positions.length; i += 3) {
-          positions[i] += vels[i];
-          positions[i + 1] += vels[i + 1];
-          positions[i + 2] += vels[i + 2];
-
-          if (positions[i] > range) positions[i] = -range;
-          if (positions[i] < -range) positions[i] = range;
-          if (positions[i + 1] > range) positions[i + 1] = -range;
-          if (positions[i + 1] < -range) positions[i + 1] = range;
-          if (positions[i + 2] > range) positions[i + 2] = -range;
-          if (positions[i + 2] < -range) positions[i + 2] = range;
+        const pos = particles.geometry.attributes.position.array;
+        const vel = particles.geometry.userData.velocities;
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i] += vel[i];
+          pos[i + 1] += vel[i + 1];
+          pos[i + 2] += vel[i + 2];
+          if (pos[i] > 15) pos[i] = -15;
+          if (pos[i] < -15) pos[i] = 15;
+          if (pos[i + 1] > 15) pos[i + 1] = -15;
+          if (pos[i + 1] < -15) pos[i + 1] = 15;
+          if (pos[i + 2] > 15) pos[i + 2] = -15;
+          if (pos[i + 2] < -15) pos[i + 2] = 15;
         }
-
         particles.geometry.attributes.position.needsUpdate = true;
-
-        // IMPORTANT: Use composer, not renderer
         composer.render();
       }
       animate();
