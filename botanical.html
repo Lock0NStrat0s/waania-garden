@@ -121,6 +121,14 @@
         // 1. Clean the old flower
         flowerGroup.clear();
 
+        // Dispose of old materials to free up memory
+        flowerGroup.children.forEach((pivot) => {
+          pivot.children.forEach((mesh) => {
+            if (mesh.material) mesh.material.dispose();
+          });
+        });
+        flowerGroup.clear(); // Now actually remove them
+
         // 2. Get Slider Values
         const totalPetals = parseInt(
           document.getElementById("petalCount").value
@@ -149,7 +157,27 @@
             pivot.rotation.z = angle + stagger;
 
             // B. Create the Petal (The Arm)
-            const petal = new THREE.Mesh(geometry, material);
+            // 1. CLONE the master material so this petal gets its own copy
+            const thisMaterial = material.clone();
+
+            // 2. CALCULATE COLOR SHIFT based on the Ring number
+            // We use HSL (Hue, Saturation, Lightness)
+            // We get the base color from the HTML picker
+            const color = new THREE.Color(
+              document.getElementById("petalColor").value
+            );
+            const hsl = {}; // Object to store HSL values
+            color.getHSL(hsl); // Extract HSL from the picked color
+
+            // MATH:
+            // Inner rings (ring 0) -> Darker (Lightness - 0.2)
+            // Outer rings (ring 3) -> Lighter (Lightness + 0.1)
+            // We map the ring number (0 to 4) to a lightness adjustment
+            const lightnessShift = ring * 0.1 - 0.1;
+            thisMaterial.color.setHSL(hsl.h, hsl.s, hsl.l + lightnessShift);
+
+            // 3. Create Mesh with the NEW custom material
+            const petal = new THREE.Mesh(geometry, thisMaterial);
 
             // BLOOM MATH:
             // Outer rings (ring 0) open wide.
