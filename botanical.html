@@ -281,6 +281,48 @@
       import * as THREE from "three";
       import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
+      // HELPER: Generates floating pollen particles
+      function createParticles() {
+        const particleCount = 200;
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = []; // To store random movement speeds
+
+        for (let i = 0; i < particleCount; i++) {
+          // Random position within a box of -10 to 10
+          const x = (Math.random() - 0.5) * 20;
+          const y = (Math.random() - 0.5) * 20;
+          const z = (Math.random() - 0.5) * 20;
+          positions.push(x, y, z);
+
+          // Random velocity (slow drift)
+          velocities.push(
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02
+          );
+        }
+
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(positions, 3)
+        );
+
+        // Custom property to store speeds
+        geometry.userData = { velocities: velocities };
+
+        const material = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 0.1, // Tiny specks
+          transparent: true,
+          opacity: 0.6,
+          sizeAttenuation: true, // Makes them smaller when far away
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        return particles;
+      }
+
       // --- 1. PROCEDURAL TEXTURE GENERATOR (The Velvet Logic) ---
       // HELPER: Generates a high-contrast vein pattern
       function createVeinTexture() {
@@ -356,6 +398,10 @@
       const flowerGroup = new THREE.Group();
       flowerGroup.position.y = 2;
       scene.add(flowerGroup);
+
+      // Add Atmosphere
+      const particles = createParticles();
+      scene.add(particles);
 
       // Groups
       const stemGroup = new THREE.Group();
@@ -573,6 +619,23 @@
         requestAnimationFrame(animate);
         updateBreathing();
         controls.update();
+
+        // --- NEW: Particle Animation ---
+        const positions = particles.geometry.attributes.position.array;
+        const velocities = particles.geometry.userData.velocities;
+
+        for (let i = 0; i < positions.length; i += 3) {
+          // Update X, Y, Z
+          positions[i] += velocities[i]; // X
+          positions[i + 1] += velocities[i + 1]; // Y
+          positions[i + 2] += velocities[i + 2]; // Z
+
+          // Loop them back if they fly too far (keep them in the box)
+          if (positions[i + 1] > 10) positions[i + 1] = -10;
+          if (positions[i + 1] < -10) positions[i + 1] = 10;
+        }
+        particles.geometry.attributes.position.needsUpdate = true; // Tell GPU to update
+
         renderer.render(scene, camera);
       }
       animate();
