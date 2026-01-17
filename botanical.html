@@ -311,6 +311,9 @@
       scene.add(flowerGroup);
 
       // Shared Geometries (Optimization)
+      const thornGeometry = new THREE.ConeGeometry(0.08, 0.4, 8);
+      thornGeometry.translate(0, 0.2, 0); // Pivot adjustment
+
       const petalGeometry = new THREE.SphereGeometry(0.5, 32, 16);
       petalGeometry.translate(0, 0.5, 0); // Pivot adjustment
 
@@ -348,6 +351,56 @@
 
         // 2. Build Stem
         flowerGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
+
+        // --- 2.5 ADD THORNS & LEAVES ---
+        // We will walk down the stem path and randomly place items
+        const stemLength = 20; // Number of steps down the stem
+
+        for (let i = 1; i < stemLength - 1; i++) {
+          // "t" is a value from 0 (top) to 1 (bottom)
+          const t = i / stemLength;
+          const point = stemPath.getPointAt(t); // Get (x,y,z) on curve
+          const tangent = stemPath.getTangentAt(t); // Get direction of curve
+
+          // A. THORNS (Random chance: 20%)
+          if (Math.random() < 0.2) {
+            const thorn = new THREE.Mesh(thornGeometry, stemMaterial);
+
+            thorn.position.copy(point);
+
+            // Math to make thorn point OUTWARD from stem
+            // We use a random rotation around the stem axis
+            thorn.quaternion.setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0),
+              tangent
+            );
+            thorn.rotateX(Math.PI / 2); // Point out
+            thorn.rotateZ(Math.random() * Math.PI * 2); // Random direction
+
+            flowerGroup.add(thorn);
+          }
+
+          // B. STEM LEAVES (Random chance: 15%)
+          // Don't put leaves too close to the flower head (t > 0.3)
+          if (t > 0.3 && Math.random() < 0.15) {
+            const leaf = new THREE.Mesh(petalGeometry, stemMaterial);
+
+            // Shape: Short, fat, and flat
+            leaf.scale.set(0.5, 1.5, 0.05);
+
+            leaf.position.copy(point);
+
+            // Orientation
+            leaf.quaternion.setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0),
+              tangent
+            );
+            leaf.rotateX(Math.PI / 2);
+            leaf.rotateZ(Math.random() * Math.PI * 2);
+
+            flowerGroup.add(leaf);
+          }
+        }
 
         // 3. Build Sepals
         for (let i = 0; i < 3; i++) {
