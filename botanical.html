@@ -8,75 +8,169 @@
     />
     <title>Waania's Botanical Lab</title>
     <style>
+      /* --- BASE STYLES --- */
       body {
         margin: 0;
         overflow: hidden;
-        background: #111; /* Will be overwritten by JS scene.background */
+        background: #111;
+        font-family: system-ui, -apple-system, sans-serif;
       }
       canvas {
         display: block;
       }
-      #controls {
+
+      /* --- UI CONTAINER (Glassmorphism) --- */
+      #ui-container {
         position: absolute;
         bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%); /* Centers the box */
-
-        background: rgba(26, 26, 46, 0.95); /* Semi-transparent dark blue */
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Nice depth shadow */
+        left: 20px;
+        width: 300px;
+        max-width: 80%;
+        background: rgba(20, 20, 35, 0.85); /* Dark Blue Glass */
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-
-        color: white;
-        font-family: system-ui, -apple-system, sans-serif;
-
-        /* THE LAYOUT FIX */
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        transition: transform 0.3s ease, opacity 0.3s ease;
         display: flex;
-        flex-direction: column; /* Stack items top-to-bottom */
-        gap: 15px; /* Space between every item */
-        min-width: 250px;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 10;
       }
 
-      label {
+      /* Hiding the panel slides it down and fades it */
+      #ui-container.hidden {
+        transform: translateY(150%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* --- HEADER & TOGGLE --- */
+      .header {
         display: flex;
         justify-content: space-between;
-        font-size: 0.9rem;
-        font-weight: 500;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1rem;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+
+      /* Close Button (X) */
+      .close-btn {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px;
+      }
+      .close-btn:hover {
+        color: white;
+      }
+
+      /* --- SHOW BUTTON (Floating Icon) --- */
+      #show-ui-btn {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(20, 20, 35, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 5; /* Below the main panel */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+      }
+      #show-ui-btn:active {
+        transform: scale(0.9);
+      }
+
+      /* --- INPUT ROWS --- */
+      .control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
         color: #ccc;
       }
 
-      /* Style the Sliders */
+      /* SYNCED INPUTS */
+      .input-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* The Slider */
       input[type="range"] {
-        width: 100%;
+        flex-grow: 1; /* Takes up remaining space */
+        accent-color: #ff0066;
         cursor: pointer;
       }
 
-      /* Style the Color Picker */
+      /* The Number Box */
+      input[type="number"] {
+        width: 50px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        color: white;
+        padding: 4px;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+      /* Remove arrows from number input */
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+
+      /* Color Picker */
       input[type="color"] {
         width: 100%;
-        height: 30px;
+        height: 35px;
         border: none;
-        border-radius: 5px;
+        border-radius: 6px;
         cursor: pointer;
         background: none;
       }
 
-      /* Style the Snap Button */
-      button {
-        background: linear-gradient(135deg, #ff0066, #ff5599);
+      /* --- SNAP BUTTON (Bottom Right) --- */
+      #saveBtn {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: white;
+        color: #1a1a2e;
         border: none;
-        padding: 12px;
-        border-radius: 8px;
-        color: white;
+        padding: 15px 25px;
+        border-radius: 30px;
         font-weight: bold;
         font-size: 1rem;
         cursor: pointer;
-        transition: transform 0.1s;
-        margin-top: 5px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        z-index: 100;
+        transition: transform 0.2s;
       }
-      button:active {
-        transform: scale(0.96);
+      #saveBtn:active {
+        transform: scale(0.95);
       }
     </style>
     <script type="importmap">
@@ -88,177 +182,280 @@
     </script>
   </head>
   <body>
-    <div id="controls">
-      <label>Petal Count <span id="petalVal">12</span></label>
-      <input type="range" id="petalCount" min="3" max="20" value="12" />
+    <button id="show-ui-btn" title="Open Controls">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="4" y1="21" x2="4" y2="14"></line>
+        <line x1="4" y1="10" x2="4" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="3"></line>
+        <line x1="20" y1="21" x2="20" y2="16"></line>
+        <line x1="20" y1="12" x2="20" y2="3"></line>
+        <line x1="1" y1="14" x2="7" y2="14"></line>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="17" y1="16" x2="23" y2="16"></line>
+      </svg>
+    </button>
 
-      <label>Bloom Stage <span id="bloomVal">0.5</span></label>
-      <input
-        type="range"
-        id="bloomRadius"
-        min="0"
-        max="1.5"
-        step="0.1"
-        value="0.5"
-      />
+    <div id="ui-container">
+      <div class="header">
+        <h1>Botanical Lab</h1>
+        <button class="close-btn" id="hide-ui-btn">✕</button>
+      </div>
 
-      <label>Color</label>
-      <input type="color" id="petalColor" value="#ff0066" />
+      <div class="control-row">
+        <div class="label-row"><label>Petal Count</label></div>
+        <div class="input-group">
+          <input type="range" id="petalCount" min="3" max="50" value="12" />
+          <input type="number" id="petalCountNum" value="12" min="3" max="50" />
+        </div>
+      </div>
 
-      <button id="saveBtn">📸 Snap</button>
+      <div class="control-row">
+        <div class="label-row"><label>Bloom Stage</label></div>
+        <div class="input-group">
+          <input
+            type="range"
+            id="bloomRadius"
+            min="0"
+            max="1.5"
+            step="0.1"
+            value="0.5"
+          />
+          <input type="number" id="bloomRadiusNum" value="0.5" step="0.1" />
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><label>Petal Length</label></div>
+        <div class="input-group">
+          <input
+            type="range"
+            id="petalLength"
+            min="1"
+            max="8"
+            step="0.1"
+            value="4"
+          />
+          <input type="number" id="petalLengthNum" value="4" step="0.1" />
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><label>Petal Width</label></div>
+        <div class="input-group">
+          <input
+            type="range"
+            id="petalWidth"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value="1"
+          />
+          <input type="number" id="petalWidthNum" value="1" step="0.1" />
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="label-row"><label>Pigment</label></div>
+        <input type="color" id="petalColor" value="#ff0066" />
+      </div>
     </div>
+
+    <button id="saveBtn">📸 Snap</button>
 
     <script type="module">
       import * as THREE from "three";
       import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-      // --- PART 1: SETUP ---
+      // --- SETUP ---
       const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a2e);
       const camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
         0.1,
         1000
       );
-      camera.position.z = 10;
+      camera.position.set(0, 5, 15);
 
-      // 1. Ambient Light (The "Room" Light)
-      // White light at 50% intensity. Makes shadows softer.
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
-
-      // 2. Point Light (The "Sun")
-      // White light, Intensity 2 (Brighter), Distance 100
-      const pointLight = new THREE.PointLight(0xffffff, 2, 100);
-      pointLight.position.set(5, 5, 5);
-      scene.add(pointLight);
-
-      // Add preserveDrawingBuffer if you ever see blank images (optional but safe)
-      // But CRUCIALLY, we need to set the scene background color in JS, not just CSS
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
         preserveDrawingBuffer: true,
       });
-
-      // Tell Three.js the background is Dark Blue (matches your CSS)
-      scene.background = new THREE.Color(0x1a1a2e);
-
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Allow the user to rotate/zoom with the mouse
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true; // Makes the rotation smooth (like a fidget spinner)
-      controls.dampingFactor = 0.05;
-      //controls.autoRotate = true; // Slowly spin automatically
-      //controls.autoRotateSpeed = 2.0;
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+      pointLight.position.set(10, 10, 10);
+      scene.add(pointLight);
 
-      // --- PART 2: FLOWER ENGINE ---
+      // Controls
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      //controls.autoRotate = true;
+      //controls.autoRotateSpeed = 1.0;
+
+      // --- FLOWER ENGINE ---
       const flowerGroup = new THREE.Group();
-      // TILT THE FLOWER BACK so we can see the depth/cup shape
-      flowerGroup.rotation.x = 0.5;
+      flowerGroup.position.y = 2; // Center visual
       scene.add(flowerGroup);
 
-      // Reuse geometry/material for performance
-      // Shift geometry UP so pivot is at the bottom tip
-      const geometry = new THREE.SphereGeometry(0.5, 32, 16);
-      geometry.translate(0, 0.5, 0);
+      // Shared Geometries (Optimization)
+      const petalGeometry = new THREE.SphereGeometry(0.5, 32, 16);
+      petalGeometry.translate(0, 0.5, 0); // Pivot adjustment
 
-      const material = new THREE.MeshPhongMaterial({
-        color: 0xff0066,
+      const stemPath = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0.5, -4, 0),
+        new THREE.Vector3(0, -8, 0),
+      ]);
+      const stemGeometry = new THREE.TubeGeometry(stemPath, 20, 0.15, 8, false);
+
+      const baseMaterial = new THREE.MeshPhongMaterial({
         shininess: 100,
         side: THREE.DoubleSide,
       });
+      const stemMaterial = new THREE.MeshPhongMaterial({
+        color: 0x339933,
+        shininess: 10,
+        flatShading: true,
+      });
 
       function generateFlower() {
-        // 1. Clean the old flower
+        // Cleanup
+        flowerGroup.children.forEach((c) => {
+          if (c.geometry) c.geometry.dispose();
+        });
         flowerGroup.clear();
 
-        // Dispose of old materials to free up memory
-        flowerGroup.children.forEach((pivot) => {
-          pivot.children.forEach((mesh) => {
-            if (mesh.material) mesh.material.dispose();
-          });
-        });
-        flowerGroup.clear(); // Now actually remove them
+        // 1. Get Values (From Sliders)
+        // Note: The sliders and number boxes are synced, so we can just read the slider
+        const count = parseInt(document.getElementById("petalCount").value);
+        const bloom = parseFloat(document.getElementById("bloomRadius").value);
+        const len = parseFloat(document.getElementById("petalLength").value);
+        const wid = parseFloat(document.getElementById("petalWidth").value);
+        const colorVal = document.getElementById("petalColor").value;
 
-        // 2. Get Slider Values
-        const totalPetals = parseInt(
-          document.getElementById("petalCount").value
-        );
-        const bloomState = parseFloat(
-          document.getElementById("bloomRadius").value
-        );
+        // 2. Build Stem
+        flowerGroup.add(new THREE.Mesh(stemGeometry, stemMaterial));
 
-        // Update UI Text numbers
-        document.getElementById("petalVal").innerText = totalPetals;
-        document.getElementById("bloomVal").innerText = bloomState;
+        // 3. Build Sepals
+        for (let i = 0; i < 3; i++) {
+          const p = new THREE.Object3D();
+          p.rotation.z = (i / 5) * (Math.PI * 2);
+          const s = new THREE.Mesh(petalGeometry, stemMaterial);
+          s.scale.set(0.6 * wid, 4, 0.1); // Sepals don't stretch as much
+          s.rotation.x = -2.0;
+          s.position.y = -0.2;
+          p.add(s);
+          flowerGroup.add(p);
+        }
 
-        // 3. THE ROSE ALGORITHM (Double Loop)
-        const rings = 4; // How many layers of petals?
-
-        for (let i = 0; i < totalPetals; i++) {
-          for (let ring = 0; ring < rings; ring++) {
-            // A. Create the Pivot (The Shoulder)
+        // 4. Build Petals
+        const rings = 4;
+        for (let i = 0; i < count; i++) {
+          for (let r = 0; r < rings; r++) {
             const pivot = new THREE.Object3D();
+            const angle = (i / count) * (Math.PI * 2);
+            pivot.rotation.z = angle + r * 0.5; // Stagger
 
-            // STAGGER MATH:
-            // Base Angle: (i / totalPetals) * 2PI
-            // Offset: (ring * 0.5) -> Rotates inner rings slightly to fill gaps
-            const angle = (i / totalPetals) * (2 * Math.PI);
-            const stagger = ring * 0.5;
-            pivot.rotation.z = angle + stagger;
+            // Color Logic
+            const mat = baseMaterial.clone();
+            const col = new THREE.Color(colorVal);
+            const hsl = {};
+            col.getHSL(hsl);
+            mat.color.setHSL(hsl.h, hsl.s, hsl.l + (r * 0.1 - 0.1));
 
-            // B. Create the Petal (The Arm)
-            // 1. CLONE the master material so this petal gets its own copy
-            const thisMaterial = material.clone();
+            const petal = new THREE.Mesh(petalGeometry, mat);
+            petal.rotation.x = bloom + r * 0.3;
 
-            // 2. CALCULATE COLOR SHIFT based on the Ring number
-            // We use HSL (Hue, Saturation, Lightness)
-            // We get the base color from the HTML picker
-            const color = new THREE.Color(
-              document.getElementById("petalColor").value
-            );
-            const hsl = {}; // Object to store HSL values
-            color.getHSL(hsl); // Extract HSL from the picked color
+            // PARAMETRIC SCALING
+            const scale = 1 - r * 0.25;
+            petal.scale.set(scale * wid, scale * len, scale * 0.1);
 
-            // MATH:
-            // Inner rings (ring 0) -> Darker (Lightness - 0.2)
-            // Outer rings (ring 3) -> Lighter (Lightness + 0.1)
-            // We map the ring number (0 to 4) to a lightness adjustment
-            const lightnessShift = ring * 0.1 - 0.1;
-            thisMaterial.color.setHSL(hsl.h, hsl.s, hsl.l + lightnessShift);
-
-            // 3. Create Mesh with the NEW custom material
-            const petal = new THREE.Mesh(geometry, thisMaterial);
-
-            // BLOOM MATH:
-            // Outer rings (ring 0) open wide.
-            // Inner rings (ring 3) stay tighter closed.
-            // We add (ring * 0.3) to the bloom angle to keep inner ones upright.
-            petal.rotation.x = bloomState + ring * 0.3;
-
-            // SCALE MATH:
-            // Make inner rings smaller so they nest inside.
-            // Ring 0 = Size 1.0 (Big)
-            // Ring 3 = Size 0.25 (Tiny)
-            const scale = 1 - ring * 0.25;
-            // X = Width (Normal)
-            // Y = Length (Stretch it x4 to make it long)
-            // Z = Thickness (Squash it x0.1 to make it flat like paper)
-            petal.scale.set(scale, scale * 4, scale * 0.1);
-
-            // C. Assemble
             pivot.add(petal);
             flowerGroup.add(pivot);
           }
         }
       }
 
-      // Initial Build
-      generateFlower();
+      // --- UI LOGIC (Syncing & Toggling) ---
 
-      // --- PART 3: ANIMATION & EVENTS ---
+      // Helper to sync Slider <-> Number Box
+      function bindInput(sliderId, numberId) {
+        const slider = document.getElementById(sliderId);
+        const number = document.getElementById(numberId);
+
+        // Slide -> Update Number & Regen
+        slider.addEventListener("input", () => {
+          number.value = slider.value;
+          generateFlower();
+        });
+
+        // Type Number -> Update Slider & Regen
+        number.addEventListener("input", () => {
+          slider.value = number.value;
+          generateFlower();
+        });
+      }
+
+      // Bind all pairs
+      bindInput("petalCount", "petalCountNum");
+      bindInput("bloomRadius", "bloomRadiusNum");
+      bindInput("petalLength", "petalLengthNum");
+      bindInput("petalWidth", "petalWidthNum");
+
+      // Color needs no sync, just regen
+      document
+        .getElementById("petalColor")
+        .addEventListener("input", generateFlower);
+
+      // Hide/Show Logic
+      const uiPanel = document.getElementById("ui-container");
+      const hideBtn = document.getElementById("hide-ui-btn");
+      const showBtn = document.getElementById("show-ui-btn");
+
+      hideBtn.addEventListener("click", () => {
+        uiPanel.classList.add("hidden"); // Slide out
+      });
+
+      showBtn.addEventListener("click", () => {
+        uiPanel.classList.remove("hidden"); // Slide in
+      });
+
+      // --- SNAPSHOT LOGIC ---
+      document.getElementById("saveBtn").addEventListener("click", async () => {
+        renderer.render(scene, camera);
+        const dataURL = renderer.domElement.toDataURL("image/png");
+
+        if (navigator.share) {
+          const blob = await (await fetch(dataURL)).blob();
+          const file = new File([blob], "waania-rose.png", {
+            type: "image/png",
+          });
+          try {
+            await navigator.share({ files: [file], title: "My Flower" });
+          } catch (e) {}
+        } else {
+          const link = document.createElement("a");
+          link.download = "flower.png";
+          link.href = dataURL;
+          link.click();
+        }
+      });
+
+      // Init
+      generateFlower();
       function animate() {
         requestAnimationFrame(animate);
         controls.update();
@@ -270,52 +467,6 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      // Listeners
-      document
-        .getElementById("petalCount")
-        .addEventListener("input", generateFlower);
-      document
-        .getElementById("bloomRadius")
-        .addEventListener("input", generateFlower);
-
-      // COLOR LISTENER
-      document
-        .getElementById("petalColor")
-        .addEventListener("input", generateFlower);
-
-      document.getElementById("saveBtn").addEventListener("click", async () => {
-        // 1. Force a render to grab the latest frame
-        renderer.render(scene, camera);
-
-        // 2. Get the Data URL (Base64 string)
-        const dataURL = renderer.domElement.toDataURL("image/png");
-
-        // 3. Check if "Native Sharing" is supported (Mobile)
-        if (navigator.share) {
-          // Convert Base64 to a standard File object (Blob)
-          const blob = await (await fetch(dataURL)).blob();
-          const file = new File([blob], "waania-rose.png", {
-            type: "image/png",
-          });
-
-          // Trigger the Native Mobile Share Sheet
-          try {
-            await navigator.share({
-              files: [file],
-              title: "Waania's Rose",
-            });
-          } catch (error) {
-            console.log("Sharing failed or cancelled:", error);
-          }
-        } else {
-          // 4. Fallback for Desktop (Old method)
-          const link = document.createElement("a");
-          link.download = "waania-rose.png";
-          link.href = dataURL;
-          link.click();
-        }
       });
     </script>
   </body>
